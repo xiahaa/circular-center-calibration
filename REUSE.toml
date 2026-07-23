@@ -1,0 +1,22 @@
+version = 1
+SPDX-PackageName = "circular-center-calibration"
+SPDX-PackageSupplier = "Jiajun Jiang, Xiao Hu, Wancheng Liu, and Wei Jiang"
+SPDX-PackageDownloadLocation = "NOASSERTION"
+
+[[annotations]]
+path = [
+    ".github/**",
+    "CITATION.cff",
+    "CMakeLists.txt",
+    "NOTICE",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+    "cpp/**",
+    "examples/**",
+    "experiments/**",
+    "pyproject.toml",
+    "python/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Jiajun Jiang, Xiao Hu, Wancheng Liu, and Wei Jiang"
+SPDX-License-Identifier = "Apache-2.0"

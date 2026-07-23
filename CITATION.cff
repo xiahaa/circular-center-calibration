@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper."
+title: "Circular Center Estimation"
+type: software
+version: 0.1.0
+date-released: 2026-07-23
+authors:
+  - family-names: Jiang
+    given-names: Jiajun
+  - family-names: Hu
+    given-names: Xiao
+  - family-names: Liu
+    given-names: Wancheng
+  - family-names: Jiang
+    given-names: Wei
+preferred-citation:
+  type: article
+  year: 2026
+  title: "Accurate Measurement of 3D and 2D Circular Centers With Application to LiDAR-Camera Extrinsic Calibration"
+  authors:
+    - family-names: Jiang
+      given-names: Jiajun
+    - family-names: Hu
+      given-names: Xiao
+    - family-names: Liu
+      given-names: Wancheng
+    - family-names: Jiang
+      given-names: Wei

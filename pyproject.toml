@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "circular-center-calibration"
+version = "0.1.0"
+description = "Minimal 3D and 2D circular-center estimation reference implementation"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy>=1.17",
+]
+
+[project.optional-dependencies]
+vision = [
+    "opencv-python>=4.5",
+]
+dev = [
+    "pytest>=7,<9",
+    "ruff>=0.4",
+]
+
+[tool.setuptools]
+package-dir = {"" = "python/src"}
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
+
+[tool.setuptools.packages.find]
+where = ["python/src"]
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
