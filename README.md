@@ -36,7 +36,7 @@ Ubuntu 20.04 or newer is recommended.
 
 ## data
 
-Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link)
+Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing)
 
 ### Python
 
