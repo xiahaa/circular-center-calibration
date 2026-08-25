@@ -22,6 +22,10 @@ dependencies = [
 vision = [
     "opencv-python>=4.5",
 ]
+experiments = [
+    "opencv-python>=4.5",
+    "matplotlib>=3.5",
+]
 dev = [
     "pytest>=7,<9",
     "ruff>=0.4",
@@ -40,3 +44,6 @@ testpaths = ["python/tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
