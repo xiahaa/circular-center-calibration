@@ -98,6 +98,7 @@ def run_experiment(
         experiment_directory=experiment_directory,
         output_directory=destination,
         methods=methods,
+        method_catalog=catalog,
         max_frames=max_frames,
     )
     result = _jsonable(_load_experiment_module(repository_root, selection.name).run(context))
@@ -127,6 +128,10 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def _console_summary(result: Mapping[str, Any]) -> Mapping[str, Any]:
+    supplied = result.get("console_summary")
+    if isinstance(supplied, Mapping):
+        return supplied
+
     datasets = []
     for dataset in result["datasets"]:
         calibration = dataset["calibration"]

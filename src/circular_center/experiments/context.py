@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple
 
 from .config import ExperimentSelection
+
+if TYPE_CHECKING:
+    from circular_center.registry import MethodCatalog
+
+
+_METHOD_KINDS = {"2d": "center2d", "3d": "center3d", "ambiguity": "ambiguity"}
 
 
 @dataclass(frozen=True)
@@ -18,6 +24,7 @@ class ExperimentContext:
     experiment_directory: Path
     output_directory: Path
     methods: Mapping[str, Tuple[Any, ...]]
+    method_catalog: "MethodCatalog"
     max_frames: Optional[int] = None
 
     def methods_for(self, kind: str) -> Tuple[Any, ...]:
@@ -51,6 +58,26 @@ class ExperimentContext:
                 )
             )
         return None if not methods else methods[0]
+
+    def create_method(
+        self,
+        kind: str,
+        name: str,
+        overrides: Optional[Mapping[str, Any]] = None,
+    ) -> Any:
+        """Create a selected method with experiment-protocol parameter overrides."""
+
+        try:
+            expected_kind = _METHOD_KINDS[kind]
+        except KeyError as error:
+            raise ValueError("unknown experiment method kind {!r}".format(kind)) from error
+        if name not in self.selection.method_names(kind):
+            raise ValueError(
+                "method {!r} was not selected for experiment {!r}".format(
+                    name, self.selection.name
+                )
+            )
+        return self.method_catalog.create(name, expected_kind, overrides)
 
 
 __all__ = ["ExperimentContext"]
