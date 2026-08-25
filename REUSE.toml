@@ -10,12 +10,18 @@ path = [
     "CMakeLists.txt",
     "NOTICE",
     "README.md",
+    "README.legacy.md",
     "THIRD_PARTY_NOTICES.md",
+    "benchmarks/**",
+    "configs/**",
     "cpp/**",
+    "environment.yml",
     "examples/**",
     "experiments/**",
     "pyproject.toml",
-    "python/**",
+    "src/**",
+    "tests/**",
+    "tools/**",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Jiajun Jiang, Xiao Hu, Wancheng Liu, and Wei Jiang"

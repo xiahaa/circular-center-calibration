@@ -1,92 +1,119 @@
-# Circular Center Estimation
+# Circular Center Calibration
 
-Minimal reference implementation for the paper **Accurate Measurement of 3D and
-2D Circular Centers With Application to LiDAR-Camera Extrinsic Calibration**.
-
-The repository contains only the reusable contributions:
-
-- normalized conformal-geometric-algebra (CGA) fitting of a 3D circle;
-- deterministic CGA-RANSAC for noisy and outlier-contaminated 3D points;
-- perspective-aware recovery of the two possible image projections of a
-  physical circular center;
-- homography-based or quasi-RANSAC disambiguation of the two 2D candidates.
-
-It intentionally excludes large-scale evaluation infrastructure, Gazebo and
-ROS capture pipelines, real datasets, paper-figure generation, and historical
-prototypes. Those components are not required to use or verify the algorithms.
-
-## Repository layout
-
-```text
-cpp/                  Header-only C++ implementation of normalized 3D CGA fitting
-python/src/           Python package for 3D and 2D circular-center estimation
-examples/             Small, readable examples of the public APIs
-experiments/          One deterministic synthetic benchmark for basic validation
-python/tests/         Numerical and API regression tests
-```
-
-All 3D coordinates are metric. Image coordinates are pixels. The 2D estimator
-accepts only a rectified contour or ellipse together with the corresponding
-rectified intrinsic matrix. Raw distorted contours are not conics and must be
-undistorted before calling the estimator.
+Modular reference implementation for 3D/2D circular-center measurement and
+LiDAR-camera extrinsic calibration.
 
 ## Installation
 
-Ubuntu 20.04 or newer is recommended.
-
-## data
-
-Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link)
-
-### Python
+The recommended environment includes the Python experiment stack and the C++
+toolchain. From the repository root:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[vision,dev]'
+conda env create -f environment.yml
+conda activate circular-center-calibration
+python -m pytest -q
+python examples/minimal_demo.py
+```
+
+`environment.yml` installs this repository in editable mode. To use an existing
+Python environment instead:
+
+```bash
+python -m pip install -e '.[experiments,dev]'
 python -m pytest -q
 ```
 
-NumPy is sufficient for the 3D core. OpenCV is installed by the `vision` extra
-and is required for contour rectification, ellipse fitting, and quasi-RANSAC.
-
-### C++
-
-The C++ core requires C++17, CMake 3.16+, and Eigen 3.3+.
+The C++ core requires C++17, CMake, Ninja, and Eigen, all of which are included
+in the Conda environment:
 
 ```bash
 cmake -S . -B build -G Ninja \
   -DCCC_BUILD_TESTS=ON \
   -DCCC_BUILD_EXAMPLES=ON
 cmake --build build
-cmake --build build --target test
+ctest --test-dir build --output-on-failure
 ./build/cpp/circular_center_fit_circle
 ```
 
-## Minimal examples
+## Run the real-world experiment
 
-Run both the robust 3D fit and the perspective-aware 2D candidate estimator:
+The outer experiment YAML intentionally contains only the dataset and method
+choices:
 
-```bash
-python examples/minimal_demo.py
+```yaml
+schema_version: 1
+experiment: qualitative_realworld
+datasets: [orbbec_livox_lab, orbbec_livox_office]
+methods:
+  2d: "Refined Center"
+  3d: "CGA-RANSAC"
+  ambiguity: "Quasi-RANSAC"
 ```
 
-Run a small deterministic Monte Carlo validation and write a JSON summary:
+Run a ten-frame smoke test per dataset, or omit `--max-frames` for all frames:
 
 ```bash
-python experiments/basic_experiments.py \
-  --trials 100 \
-  --seed 2025 \
-  --output outputs/basic_results.json
+circular-center-run \
+  configs/experiments/qualitative_realworld.yaml \
+  --max-frames 10
 ```
 
-The basic experiment compares direct CGA with CGA-RANSAC under outliers,
-compares the fitted ellipse center with the proposed 2D candidate set, and
-checks quasi-RANSAC pose recovery. It is a compact functional validation, not
-the full internal evaluation suite.
+Results are written to `outputs/qualitative_realworld/summary.json` together
+with rectified qualitative overlays. Each failed frame remains in the summary
+with its preprocessing or fitting error.
 
-## Python API
+The experiment expects `data/orbbec_livox_lab` and
+`data/orbbec_livox_office`, each containing matching `img/*.png` and
+`pcd/*.pcd` files plus `dataset.yaml` and `camera_info.yaml`. The released data
+are available from [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link).
+
+## Pluggable methods
+
+Method names match the paper. The current catalog contains:
+
+| Stage | Available names |
+| --- | --- |
+| 2D | `Ellipse Center`, `Mass Center`, `Refined Center` |
+| 3D | `CGA`, `CGA-RANSAC` |
+| Ambiguity | `Homography Validation`, `Quasi-RANSAC` |
+
+`PCL SACMODEL` is a paper comparison method, but it is not registered until a
+genuine PCL-backed adapter is present in this repository.
+
+To add a method:
+
+1. implement the corresponding interface under `src/circular_center/methods`;
+2. add one central YAML file under `configs/methods/2d`, `3d`, or `ambiguity`;
+3. select its exact `name` in an experiment YAML.
+
+No experiment code or generic runner change is required. Constructor defaults
+belong to the central method YAML. Dataset-specific extraction, detection, and
+evaluation settings belong to the relevant `experiments/<name>` directory.
+
+## Repository layout
+
+```text
+src/circular_center/
+  interfaces/             Stable method contracts
+  methods/                Reusable 2D, 3D, and ambiguity plugins
+  registry/               Central YAML discovery and dynamic loading
+  experiments/            Generic experiment configuration and runner
+configs/
+  methods/                One centrally managed YAML per method
+  experiments/            Small outer experiment selections
+experiments/
+  qualitative_realworld/  Experiment-owned extraction, detection, evaluation
+  basic_experiments.py    Deterministic synthetic regression experiment
+tests/                     Core, plugin, and experiment-system tests
+cpp/                       Header-only C++ 3D implementation and tests
+```
+
+The pre-refactor documentation is preserved in
+[`README.legacy.md`](README.legacy.md).
+
+## Core API
+
+The original low-level API remains available for compatibility:
 
 ```python
 from circular_center.center3d import fit_cga_circle, fit_circle_ransac
@@ -98,14 +125,16 @@ from circular_center.center2d import (
 )
 ```
 
-`fit_cga_circle` and `fit_circle_ransac` return `CircleFitResult`, including the
-center, radius, unoriented normal, residuals, inliers, status, condition number,
-iteration count, and elapsed time. `refine_projected_center` returns both 2D
-candidates because one projected ellipse is geometrically ambiguous.
+All 3D coordinates are metric and image coordinates are pixels. The 2D methods
+operate on rectified contours/ellipses and the matching rectified intrinsic
+matrix; raw distorted contours must be undistorted first.
 
-## License
+## Reproducibility and license
 
-Original code in this public branch is licensed under Apache-2.0. No GPL code,
-AAMED source, dataset, or vendored third-party implementation is included. See
+`tools/core_baseline_probe.py` captures deterministic core outputs and timing
+statistics. Pre-refactor reference artifacts are stored in
+`benchmarks/baselines/` and are used to audit structural changes.
+
+Original code is licensed under Apache-2.0. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for separately installed
 dependencies.
