@@ -17,7 +17,7 @@ The repository contains only the reusable contributions:
 cpp/                  Header-only C++ implementation of normalized 3D CGA fitting
 python/src/           Python package for 3D and 2D circular-center estimation
 examples/             Small, readable examples of the public APIs
-experiments/          Basic validation and paper-style synthetic experiment tools
+experiments/          Basic validation and synthetic experiment tools
 python/tests/         Numerical and API regression tests
 ```
 
@@ -113,12 +113,6 @@ python experiments/basic_experiments.py \
 The basic experiment compares direct CGA with CGA-RANSAC under outliers,
 compares the fitted ellipse center with the proposed 2D candidate set, and
 checks quasi-RANSAC pose recovery.
-
-A larger paper-style synthetic suite is documented in
-[`experiments/synthetic/README.md`](experiments/synthetic/README.md). It provides
-parameter sweeps, an optional PCL baseline on identical point sets, raw CSV
-records, grouped JSON statistics, and a plotting tool without depending on the
-legacy experiment workspace.
 
 ## Python API
 
