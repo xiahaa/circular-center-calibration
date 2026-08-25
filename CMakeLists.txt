@@ -11,5 +11,7 @@ include(CTest)
 add_subdirectory(cpp)
 
 if(CCC_BUILD_PCL_EXPERIMENTS)
+    # Ubuntu 22.04's PCL 1.12 package pulls in VTK's MPI C target.
+    enable_language(C)
     add_subdirectory(experiments/synthetic)
 endif()
