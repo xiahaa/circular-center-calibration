@@ -7,3 +7,4 @@ implementation:
   class: HomographyValidation
 parameters:
   nominal_radius_ratio: 1.0
+  clamp_degenerate_homography: false

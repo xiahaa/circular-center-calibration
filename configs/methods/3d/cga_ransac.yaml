@@ -12,3 +12,6 @@ parameters:
   minimum_inliers: null
   confidence: 0.99
   seed: 2025
+  adaptive: true
+  tie_break_median: true
+  refinement_passes: 2

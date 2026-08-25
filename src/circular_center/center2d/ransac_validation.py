@@ -108,37 +108,56 @@ def _branch_errors(projected, candidate_a, candidate_b):
     return errors, selected
 
 
-def _recover_pose(cv2, points, image_points, intrinsic, *, use_ransac, threshold=2.0):
-    """Small OpenCV adapter kept private to the quasi-RANSAC implementation."""
-    distortion = np.zeros(5)
+def _recover_pose(cv2, points, image_points, intrinsic, *, initial=None):
+    """Solve PnP, optionally refining an existing pose with every input point."""
+    distortion = np.zeros(5, dtype=np.float64)
+    object_points = np.ascontiguousarray(points, dtype=np.float64)
+    observed_points = np.ascontiguousarray(image_points, dtype=np.float64)
+    camera_matrix = np.ascontiguousarray(intrinsic, dtype=np.float64)
     try:
-        if use_ransac:
-            success, rotation_vector, translation, inliers = cv2.solvePnPRansac(
-                np.asarray(points, dtype=float),
-                np.asarray(image_points, dtype=float),
-                intrinsic,
-                distortion,
-                flags=cv2.SOLVEPNP_ITERATIVE,
-                iterationsCount=100,
-                reprojectionError=float(threshold),
-                confidence=0.99,
-            )
-            if not success or inliers is None or len(inliers) == 0:
-                raise RuntimeError("cv2.solvePnPRansac failed")
-        else:
+        if initial is None:
             success, rotation_vector, translation = cv2.solvePnP(
-                np.asarray(points, dtype=float),
-                np.asarray(image_points, dtype=float),
-                intrinsic,
+                object_points,
+                observed_points,
+                camera_matrix,
                 distortion,
                 flags=cv2.SOLVEPNP_EPNP,
             )
-            if not success:
-                raise RuntimeError("cv2.solvePnP failed")
-            inliers = np.arange(len(points), dtype=int).reshape(-1, 1)
+        else:
+            rotation, translation = initial
+            rotation_vector = cv2.Rodrigues(
+                np.asarray(rotation, dtype=np.float64)
+            )[0]
+            success, rotation_vector, translation = cv2.solvePnP(
+                object_points,
+                observed_points,
+                camera_matrix,
+                distortion,
+                rvec=rotation_vector,
+                tvec=np.asarray(translation, dtype=np.float64).reshape(3, 1).copy(),
+                useExtrinsicGuess=True,
+                flags=cv2.SOLVEPNP_ITERATIVE,
+            )
+        if not success:
+            raise RuntimeError("cv2.solvePnP failed")
     except cv2.error as error:
         raise RuntimeError("OpenCV PnP failed") from error
-    return cv2.Rodrigues(rotation_vector)[0], translation, inliers
+    if not np.isfinite(rotation_vector).all() or not np.isfinite(translation).all():
+        raise RuntimeError("cv2.solvePnP returned a non-finite pose")
+    return cv2.Rodrigues(rotation_vector)[0], translation
+
+
+def _score_pose(errors, inlier_mask, scoring, sample_size):
+    inlier_count = int(np.count_nonzero(inlier_mask))
+    if scoring == "mean_error":
+        return (-float(np.mean(errors)),)
+    if inlier_count < sample_size:
+        return None
+    return (
+        inlier_count,
+        -float(np.median(errors[inlier_mask])),
+        -float(np.mean(errors[inlier_mask])),
+    )
 
 
 def fit_quasi_ransac(
@@ -152,6 +171,8 @@ def fit_quasi_ransac(
     inlier_threshold: float = 8.0,
     max_iterations: int = 2000,
     seed: int = 2025,
+    adaptive: bool = True,
+    scoring: str = "consensus",
 ) -> QuasiRansacResult:
     """Estimate metric ``T_camera_lidar`` from two candidates per target."""
     try:
@@ -169,15 +190,22 @@ def fit_quasi_ransac(
             QuasiRansacStatus.INVALID_INPUT,
             "inlier_threshold must be positive",
         )
+    if scoring not in {"consensus", "mean_error"}:
+        raise QuasiRansacError(
+            QuasiRansacStatus.INVALID_INPUT,
+            "scoring must be 'consensus' or 'mean_error'",
+        )
     sample_size = 4
     generator = np.random.default_rng(seed)
+    cv2.setRNGSeed(int(seed) & 0x7FFFFFFF)
     initial_limit = quasi_ransac_iteration_bound(
         valid_correspondence_ratio,
         confidence,
         sample_size,
         max_iterations,
     )
-    adaptive_limit = initial_limit
+    planned_limit = initial_limit if adaptive else int(max_iterations)
+    adaptive_limit = planned_limit
     best_score = None
     best_pose = None
     best_selected = None
@@ -195,12 +223,11 @@ def fit_quasi_ransac(
             candidate_b[indices],
         )
         try:
-            rotation, translation, _ = _recover_pose(
+            rotation, translation = _recover_pose(
                 cv2,
                 p3[indices],
                 image_sample,
                 intrinsic,
-                use_ransac=False,
             )
         except (RuntimeError, ValueError, np.linalg.LinAlgError):
             pose_failures += 1
@@ -212,28 +239,25 @@ def fit_quasi_ransac(
         errors, selected = _branch_errors(projected, candidate_a, candidate_b)
         inlier_mask = errors <= inlier_threshold
         inlier_count = int(np.count_nonzero(inlier_mask))
-        if inlier_count < sample_size:
+        score = _score_pose(errors, inlier_mask, scoring, sample_size)
+        if score is None:
             continue
-        score = (
-            inlier_count,
-            -float(np.median(errors[inlier_mask])),
-            -float(np.mean(errors[inlier_mask])),
-        )
         if best_score is None or score > best_score:
             best_score = score
             best_pose = (rotation, translation)
             best_selected = selected
             best_mask = inlier_mask
-            observed_q = inlier_count / float(p3.shape[0])
-            adaptive_limit = min(
-                adaptive_limit,
-                quasi_ransac_iteration_bound(
-                    observed_q,
-                    confidence,
-                    sample_size,
-                    max_iterations,
-                ),
-            )
+            if adaptive and scoring == "consensus":
+                observed_q = inlier_count / float(p3.shape[0])
+                adaptive_limit = min(
+                    adaptive_limit,
+                    quasi_ransac_iteration_bound(
+                        observed_q,
+                        confidence,
+                        sample_size,
+                        max_iterations,
+                    ),
+                )
 
     if best_pose is None:
         raise QuasiRansacError(
@@ -242,33 +266,58 @@ def fit_quasi_ransac(
         )
 
     rotation, translation = best_pose
-    try:
-        refined_rotation, refined_translation, _ = _recover_pose(
-            cv2,
-            p3,
-            best_selected,
-            intrinsic,
-            use_ransac=True,
-            threshold=inlier_threshold,
-        )
-        projected = _project(p3, refined_rotation, refined_translation, intrinsic)
-        if projected is not None and np.isfinite(projected).all():
-            rotation, translation = refined_rotation, refined_translation
-    except (RuntimeError, ValueError, np.linalg.LinAlgError):
-        pose_failures += 1
-
     projected = _project(p3, rotation, translation, intrinsic)
-    if projected is None:
+    if projected is None or not np.isfinite(projected).all():
         raise QuasiRansacError(
             QuasiRansacStatus.POSE_FAILURE,
             "the selected pose places one or more targets behind the camera",
         )
     errors, selected = _branch_errors(projected, candidate_a, candidate_b)
     inlier_mask = errors <= inlier_threshold
+    final_score = _score_pose(errors, inlier_mask, scoring, sample_size)
+    final_state = (rotation, translation, selected, inlier_mask, errors)
+
+    # Quasi-RANSAC supplies the robust hypothesis. As in the calibration
+    # pipeline, finish by repeatedly selecting the nearest candidate and using
+    # every current consensus inlier in an ITERATIVE PnP refinement.
+    for _ in range(5):
+        if np.count_nonzero(inlier_mask) < sample_size:
+            break
+        previous_selected = selected
+        previous_mask = inlier_mask
+        try:
+            rotation, translation = _recover_pose(
+                cv2,
+                p3[inlier_mask],
+                selected[inlier_mask],
+                intrinsic,
+                initial=(rotation, translation),
+            )
+        except (RuntimeError, ValueError, np.linalg.LinAlgError):
+            pose_failures += 1
+            break
+        projected = _project(p3, rotation, translation, intrinsic)
+        if projected is None or not np.isfinite(projected).all():
+            pose_failures += 1
+            break
+        errors, selected = _branch_errors(projected, candidate_a, candidate_b)
+        inlier_mask = errors <= inlier_threshold
+        score = _score_pose(errors, inlier_mask, scoring, sample_size)
+        if score is not None and (final_score is None or score >= final_score):
+            final_score = score
+            final_state = (rotation, translation, selected, inlier_mask, errors)
+        if np.array_equal(selected, previous_selected) and np.array_equal(
+            inlier_mask, previous_mask
+        ):
+            break
+
+    rotation, translation, selected, inlier_mask, errors = final_state
     if np.count_nonzero(inlier_mask) < sample_size:
-        inlier_mask = best_mask
+        rotation, translation = best_pose
         selected = best_selected
-        errors, _ = _branch_errors(projected, candidate_a, candidate_b)
+        inlier_mask = best_mask
+        projected = _project(p3, rotation, translation, intrinsic)
+        errors = np.linalg.norm(projected - selected, axis=1)
     mean_error = float(np.mean(errors[inlier_mask]))
     return QuasiRansacResult(
         rotation=np.asarray(rotation, dtype=float),
@@ -277,7 +326,7 @@ def fit_quasi_ransac(
         selected_points=np.asarray(selected, dtype=float),
         inlier_mask=np.asarray(inlier_mask, dtype=bool),
         iterations=iterations,
-        iteration_limit=initial_limit,
+        iteration_limit=planned_limit,
         confidence=float(confidence),
         pose_failures=pose_failures,
         status=QuasiRansacStatus.SUCCESS,

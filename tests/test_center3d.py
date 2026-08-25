@@ -119,6 +119,26 @@ class Center3dTest(unittest.TestCase):
         np.testing.assert_allclose(first.center, second.center, atol=1e-12)
         np.testing.assert_array_equal(first.inlier_mask, second.inlier_mask)
 
+    def test_reference_mode_uses_fixed_iteration_budget(self):
+        center = np.array([0.4, -0.2, 1.0])
+        circle_points, _ = self.make_circle(center, 0.6, [0.2, -0.3, 0.9], 40)
+        generator = np.random.default_rng(4)
+        points = np.vstack((circle_points, generator.uniform(-2.0, 2.0, (10, 3))))
+
+        result = fit_circle_ransac(
+            points,
+            residual_threshold=0.01,
+            max_iterations=23,
+            minimum_inliers=30,
+            seed=5489,
+            adaptive=False,
+            tie_break_median=False,
+            refinement_passes=1,
+        )
+
+        self.assertEqual(result.iterations, 23)
+        self.assertLess(np.linalg.norm(result.center - center), 1e-8)
+
 
 if __name__ == "__main__":
     unittest.main()

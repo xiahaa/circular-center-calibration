@@ -220,6 +220,15 @@ class Center2dTest(unittest.TestCase):
         np.testing.assert_allclose(first.translation, second.translation, atol=1e-10)
         self.assertLess(np.linalg.norm(first.translation - translation), 1e-3)
         self.assertLess(first.mean_reprojection_error, 1e-3)
+        fitted_camera = first.rotation @ points.T + first.translation
+        fitted_pixels = intrinsic @ fitted_camera
+        fitted_pixels = (fitted_pixels[:2] / fitted_pixels[2]).T
+        primary_error = np.linalg.norm(fitted_pixels - projected, axis=1)
+        alternative_error = np.linalg.norm(fitted_pixels - alternative, axis=1)
+        expected_selection = np.where(
+            (primary_error <= alternative_error)[:, None], projected, alternative
+        )
+        np.testing.assert_array_equal(first.selected_points, expected_selection)
 
 
 if __name__ == "__main__":

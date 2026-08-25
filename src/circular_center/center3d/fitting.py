@@ -167,13 +167,18 @@ def fit_circle_ransac(
     confidence: float = 0.99,
     seed: int = 0,
     fitter: CircleFitter = cga_circle_fitting_joint,
+    adaptive: bool = True,
+    tie_break_median: bool = True,
+    refinement_passes: int = 2,
 ) -> CircleFitResult:
-    """Robustly fit a 3D circle using deterministic, adaptive RANSAC."""
+    """Robustly fit a 3D circle using deterministic configurable RANSAC."""
     points = _validate_points(points, minimum_count=sample_size)
     if residual_threshold <= 0.0 or max_iterations <= 0 or sample_size < 3:
         raise CircleFitError(FitStatus.INVALID_INPUT, "invalid RANSAC thresholds or counts")
     if not 0.0 < confidence < 1.0:
         raise CircleFitError(FitStatus.INVALID_INPUT, "confidence must be in (0, 1)")
+    if refinement_passes <= 0:
+        raise CircleFitError(FitStatus.INVALID_INPUT, "refinement_passes must be positive")
     if minimum_inliers is None:
         minimum_inliers = max(sample_size, int(np.ceil(0.4 * points.shape[0])))
     if minimum_inliers < sample_size or minimum_inliers > points.shape[0]:
@@ -203,19 +208,24 @@ def fit_circle_ransac(
         inlier_count = int(np.count_nonzero(inlier_mask))
         if inlier_count < minimum_inliers:
             continue
-        score = (inlier_count, -float(np.median(residuals[inlier_mask])))
+        score = (
+            (inlier_count, -float(np.median(residuals[inlier_mask])))
+            if tie_break_median
+            else inlier_count
+        )
         if best_score is None or score > best_score:
             best_score = score
             best_mask = inlier_mask
-            adaptive_limit = min(
-                adaptive_limit,
-                ransac_iteration_bound(
-                    inlier_count / float(points.shape[0]),
-                    sample_size,
-                    confidence,
-                    max_iterations,
-                ),
-            )
+            if adaptive:
+                adaptive_limit = min(
+                    adaptive_limit,
+                    ransac_iteration_bound(
+                        inlier_count / float(points.shape[0]),
+                        sample_size,
+                        confidence,
+                        max_iterations,
+                    ),
+                )
 
     if best_mask is None:
         raise CircleFitError(
@@ -224,8 +234,10 @@ def fit_circle_ransac(
         )
 
     center, radius, normal = _coerce_fit_tuple(fitter(points[best_mask]))
-    refined_mask = circle_residuals(points, center, radius, normal) <= residual_threshold
-    if np.count_nonzero(refined_mask) >= minimum_inliers:
+    for _ in range(1, refinement_passes):
+        refined_mask = circle_residuals(points, center, radius, normal) <= residual_threshold
+        if np.count_nonzero(refined_mask) < minimum_inliers:
+            break
         center, radius, normal = _coerce_fit_tuple(fitter(points[refined_mask]))
         best_mask = circle_residuals(points, center, radius, normal) <= residual_threshold
 

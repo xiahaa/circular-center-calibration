@@ -10,3 +10,6 @@ parameters:
   directions: 16
   levels_px: [2.0, 0.5, 0.1]
   nms_scale: 0.08
+  search_mode: coarse_to_fine
+  integer_lattice_step_px: 0.1
+  integer_nms_radius_px: 10.0

@@ -18,7 +18,44 @@ def normalize_matrix_determinant(matrix: np.ndarray):
     return scale * matrix, scale
 
 
-def _construct_rectifying_homography(q11, q22, q33, center_x, center_y):
+def _construct_rectifying_homography(
+    q11,
+    q22,
+    q33,
+    center_x,
+    center_y,
+    *,
+    clamp_degenerate=False,
+):
+    if clamp_degenerate:
+        # Historical CCFinder experiments clamp a non-real affine scale instead
+        # of rejecting the candidate.  Keep that numerical behavior available
+        # only when an experiment explicitly asks for paper compatibility.
+        projective_denominator = q11 * center_x**2 + q33 + 1e-10
+        projective = np.array(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [q11 * center_x, q22 * center_y, q33]]
+        )
+        shear = q22 * center_x * center_y / projective_denominator
+        radicand = (
+            q22
+            * q33
+            / (q11 + 1e-10)
+            * (q11 * center_x**2 + q22 * center_y**2 + q33)
+            / projective_denominator**2
+            - shear**2
+        )
+        scale = np.sqrt(radicand) if radicand > 1e-10 else 1e-10
+        affine = np.array(
+            [[1.0 / scale, -shear / scale, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        )
+        conic_value = q11 * center_x**2 + q22 * center_y**2 + q33
+        translate_x = (-center_x / scale + center_y * shear / scale) / conic_value
+        translate_y = -center_y / conic_value
+        euclidean = np.array(
+            [[1.0, 0.0, translate_x], [0.0, 1.0, translate_y], [0.0, 0.0, 1.0]]
+        )
+        return euclidean @ affine @ projective
+
     denominator = q11 * center_x**2 + q33
     conic_value = q11 * center_x**2 + q22 * center_y**2 + q33
     epsilon = 1e-10
@@ -70,7 +107,7 @@ def ellipse_to_canonical_conic(ellipse):
     return transform, canonical, conic
 
 
-def find_homography(ellipse, center):
+def find_homography(ellipse, center, *, clamp_degenerate=False):
     """Construct a circle-plane rectification for one center candidate."""
     transform, canonical, _ = ellipse_to_canonical_conic(ellipse)
     homogeneous_center = np.append(np.asarray(center, dtype=float).reshape(2), 1.0)
@@ -81,6 +118,7 @@ def find_homography(ellipse, center):
         canonical[2, 2],
         canonical_center[0],
         canonical_center[1],
+        clamp_degenerate=clamp_degenerate,
     )
     return homography, canonical, transform
 

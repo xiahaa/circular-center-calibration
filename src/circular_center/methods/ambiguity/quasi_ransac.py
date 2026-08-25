@@ -14,12 +14,16 @@ class QuasiRANSAC:
         inlier_threshold_px: float = 8.0,
         max_iterations: int = 2000,
         seed: int = 2025,
+        adaptive: bool = True,
+        scoring: str = "consensus",
     ) -> None:
         self.confidence = float(confidence)
         self.valid_correspondence_ratio = float(valid_correspondence_ratio)
         self.inlier_threshold_px = float(inlier_threshold_px)
         self.max_iterations = int(max_iterations)
         self.seed = int(seed)
+        self.adaptive = bool(adaptive)
+        self.scoring = str(scoring)
 
     def resolve(
         self,
@@ -35,6 +39,8 @@ class QuasiRANSAC:
             inlier_threshold=self.inlier_threshold_px,
             max_iterations=self.max_iterations,
             seed=self.seed,
+            adaptive=self.adaptive,
+            scoring=self.scoring,
         )
 
 

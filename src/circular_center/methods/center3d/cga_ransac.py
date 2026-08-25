@@ -18,6 +18,9 @@ class CGARANSAC:
         minimum_inliers: Optional[int] = None,
         confidence: float = 0.99,
         seed: int = 0,
+        adaptive: bool = True,
+        tie_break_median: bool = True,
+        refinement_passes: int = 2,
     ) -> None:
         self.residual_threshold_m = float(residual_threshold_m)
         self.max_iterations = int(max_iterations)
@@ -27,6 +30,9 @@ class CGARANSAC:
         )
         self.confidence = float(confidence)
         self.seed = int(seed)
+        self.adaptive = bool(adaptive)
+        self.tie_break_median = bool(tie_break_median)
+        self.refinement_passes = int(refinement_passes)
 
     def fit(self, points: np.ndarray) -> CircleFitResult:
         return fit_circle_ransac(
@@ -37,6 +43,9 @@ class CGARANSAC:
             minimum_inliers=self.minimum_inliers,
             confidence=self.confidence,
             seed=self.seed,
+            adaptive=self.adaptive,
+            tie_break_median=self.tie_break_median,
+            refinement_passes=self.refinement_passes,
         )
 
 
