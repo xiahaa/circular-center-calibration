@@ -1,4 +1,4 @@
-# Synthetic paper experiments
+# Synthetic experiments
 
 This directory contains a deterministic, public-API-only rewrite of the
 synthetic experiments used while developing the paper. It replaces the legacy
@@ -33,7 +33,4 @@ to `raw_results.csv` and grouped mean, median, p95, and success-rate statistics
 to `summary.json`.
 
 The experiment records are synthetic measurements produced by the current
-released implementation. They do not claim bit-for-bit reproduction of the
-legacy result files. In particular, the PCL baseline is intentionally absent:
-PCL is not part of the minimal core package, and no third-party source is
-vendored on this branch.
+released implementation. 
