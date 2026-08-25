@@ -5,6 +5,13 @@ project(circular_center_calibration VERSION 0.1.1 LANGUAGES CXX)
 
 option(CCC_BUILD_TESTS "Build numerical regression tests" ON)
 option(CCC_BUILD_EXAMPLES "Build the minimal C++ example" ON)
+option(CCC_BUILD_PCL_EXPERIMENTS "Build the optional PCL experiment adapter" OFF)
 
 include(CTest)
 add_subdirectory(cpp)
+
+if(CCC_BUILD_PCL_EXPERIMENTS)
+    # Ubuntu 22.04's PCL 1.12 package pulls in VTK's MPI C target.
+    enable_language(C)
+    add_subdirectory(experiments/synthetic)
+endif()

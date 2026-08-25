@@ -56,6 +56,24 @@ cmake --build build --target test
 ./build/cpp/circular_center_fit_circle
 ```
 
+### Optional PCL benchmark
+
+PCL is required only for the synthetic 3D baseline, not for the core library.
+On Ubuntu, install and build it with:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libeigen3-dev libpcl-dev ninja-build
+cmake -S . -B build-pcl -G Ninja \
+  -DCCC_BUILD_PCL_EXPERIMENTS=ON \
+  -DCCC_BUILD_TESTS=OFF \
+  -DCCC_BUILD_EXAMPLES=OFF
+cmake --build build-pcl --target circular_center_pcl_batch
+```
+
+The complete PCL run command and legacy Monte Carlo correspondence are
+documented in [`experiments/synthetic/README.md`](experiments/synthetic/README.md).
+
 ## ROS integration
 
 A ROS 1 Noetic integration is maintained in
@@ -98,8 +116,9 @@ checks quasi-RANSAC pose recovery.
 
 A larger paper-style synthetic suite is documented in
 [`experiments/synthetic/README.md`](experiments/synthetic/README.md). It provides
-parameter sweeps, raw CSV records, grouped JSON statistics, and a plotting tool
-without depending on the legacy experiment workspace.
+parameter sweeps, an optional PCL baseline on identical point sets, raw CSV
+records, grouped JSON statistics, and a plotting tool without depending on the
+legacy experiment workspace.
 
 ## Python API
 

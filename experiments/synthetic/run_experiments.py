@@ -8,7 +8,9 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 from time import perf_counter
 
 import cv2
@@ -102,23 +104,31 @@ def _base_record(study, sweep, setting, trial, method):
 
 def _angles(generator, count, span_degrees, distribution):
     span = np.deg2rad(span_degrees)
-    start = generator.uniform(0.0, 2.0 * np.pi)
     if distribution == "limited_nonuniform":
-        return start + np.square(generator.uniform(0.0, 1.0, count)) * span - 0.2 * span
+        return np.square(generator.uniform(0.0, 1.0, count)) * span - 0.2 * span
     if distribution == "sparse_clusters":
-        cluster_count = min(3, max(1, count // 4))
-        cluster_centers = generator.uniform(0.0, 2.0 * np.pi, cluster_count)
-        cluster_ids = np.arange(count) % cluster_count
-        generator.shuffle(cluster_ids)
-        return start + cluster_centers[cluster_ids] + generator.normal(0.0, 0.08, count)
+        cluster_count = min(3, count // 4)
+        if cluster_count == 0:
+            raise ValueError("the legacy sparse distribution requires at least four points")
+        angles = []
+        for cluster in range(cluster_count):
+            center = generator.uniform(0.0, 2.0 * np.pi)
+            width = generator.uniform(np.pi / 30.0, np.pi / 9.0)
+            points_in_cluster = count // cluster_count
+            if cluster == cluster_count - 1:
+                points_in_cluster = count - len(angles)
+            angles.extend(generator.normal(center, width, points_in_cluster))
+        return np.asarray(angles)
     if distribution == "symmetric_nonuniform":
+        if count <= 1:
+            return np.zeros(count)
         half = count // 2
-        positive = np.sort(generator.uniform(0.0, 0.5 * span, half))
-        values = np.concatenate((-positive[::-1], positive))
-        if count % 2:
-            values = np.concatenate((values, [0.0]))
-        return start + values[:count]
-    return start + np.linspace(0.0, span, count, endpoint=False)
+        intervals = generator.uniform(0.8, 1.2, half)
+        intervals *= (0.5 * span) / np.sum(intervals)
+        cumulative = np.concatenate(([0.0], np.cumsum(intervals)))
+        values = np.concatenate((-cumulative[::-1], cumulative[1:]))
+        return values[:count]
+    return generator.uniform(0.0, span, count)
 
 
 def _generate_circle_points(
@@ -139,38 +149,140 @@ def _generate_circle_points(
     return points + generator.normal(0.0, noise_sigma, size=points.shape)
 
 
+def _configuration(
+    sweep,
+    setting,
+    count,
+    span,
+    noise,
+    outlier_ratio,
+    distribution,
+    generator_kind,
+    default_trials,
+    pcl_threshold,
+):
+    return {
+        "sweep": sweep,
+        "setting": setting,
+        "count": count,
+        "span": span,
+        "noise": noise,
+        "outlier_ratio": outlier_ratio,
+        "distribution": distribution,
+        "generator_kind": generator_kind,
+        "default_trials": default_trials,
+        "pcl_threshold": pcl_threshold,
+    }
+
+
 def _three_dimensional_configurations(profile):
     if profile == "smoke":
         return [
-            ("noise_sigma_m", 0.01, 100, 360.0, 0.01, 0.0, "uniform"),
-            ("visible_arc_degrees", 180.0, 100, 180.0, 0.1, 0.0, "uniform"),
-            ("outlier_ratio", 0.3, 100, 360.0, 0.1, 0.3, "uniform"),
-            ("legacy_scenario", "limited_arc", 100, 70.0, 0.2, 0.0, "limited_nonuniform"),
+            _configuration(
+                "noise_sigma_m", 0.01, 50, None, 0.01, 0.0, None,
+                "legacy_random_span", 1, 0.01,
+            ),
+            _configuration(
+                "visible_arc_degrees", 180.0, 50, 180.0, 0.1, 0.0, None,
+                "legacy_grid", 1, 0.1,
+            ),
+            _configuration(
+                "outlier_ratio", 0.3, 50, 360.0, 0.1, 0.3, None,
+                "legacy_grid", 1, 0.1,
+            ),
+            _configuration(
+                "legacy_scenario", "limited_arc", 100, 70.0, 0.2, 0.0,
+                "limited_nonuniform", "legacy_stress", 1, 0.1,
+            ),
         ]
     configurations = []
     for noise in (1e-4, 1e-3, 1e-2, 1e-1, 1.0):
-        configurations.append(("noise_sigma_m", noise, 100, 360.0, noise, 0.0, "uniform"))
+        configurations.append(
+            _configuration(
+                "noise_sigma_m", noise, 50, None, noise, 0.0, None,
+                "legacy_random_span", 500, noise,
+            )
+        )
     for span in (90.0, 135.0, 180.0, 225.0, 270.0, 315.0, 360.0):
-        configurations.append(("visible_arc_degrees", span, 100, span, 0.1, 0.0, "uniform"))
+        configurations.append(
+            _configuration(
+                "visible_arc_degrees", span, 50, span, 0.1, 0.0, None,
+                "legacy_grid", 500, 0.1,
+            )
+        )
     for ratio in (0.1, 0.2, 0.3, 0.4, 0.5):
-        configurations.append(("outlier_ratio", ratio, 100, 360.0, 0.1, ratio, "uniform"))
+        configurations.append(
+            _configuration(
+                "outlier_ratio", ratio, 50, 360.0, 0.1, ratio, None,
+                "legacy_grid", 100, 0.1,
+            )
+        )
     configurations.extend(
         [
-            ("legacy_scenario", "isotropic_noise", 100, 360.0, 0.2, 0.0, "uniform"),
-            ("legacy_scenario", "limited_arc", 100, 70.0, 0.2, 0.0, "limited_nonuniform"),
-            ("legacy_scenario", "sparse_points", 12, 360.0, 0.2, 0.0, "sparse_clusters"),
-            (
-                "legacy_scenario",
-                "symmetric_distribution",
-                20,
-                200.0,
-                0.2,
-                0.0,
-                "symmetric_nonuniform",
+            _configuration(
+                "legacy_scenario", "isotropic_noise", 100, 360.0, 0.2, 0.0,
+                "uniform", "legacy_stress", 1000, 0.1,
+            ),
+            _configuration(
+                "legacy_scenario", "limited_arc", 100, 70.0, 0.2, 0.0,
+                "limited_nonuniform", "legacy_stress", 1000, 0.1,
+            ),
+            _configuration(
+                "legacy_scenario", "sparse_points", 12, 360.0, 0.2, 0.0,
+                "sparse_clusters", "legacy_stress", 1000, 0.1,
+            ),
+            _configuration(
+                "legacy_scenario", "symmetric_distribution", 20, 200.0, 0.2, 0.0,
+                "symmetric_nonuniform", "legacy_stress", 1000, 0.1,
             ),
         ]
     )
     return configurations
+
+
+def _generate_three_dimensional_sample(generator, configuration):
+    count = configuration["count"]
+    noise = configuration["noise"]
+    if configuration["generator_kind"] in ("legacy_random_span", "legacy_grid"):
+        radius = float(generator.uniform(2.0, 5.0))
+        if configuration["generator_kind"] == "legacy_random_span":
+            span = float(generator.uniform(90.0, 360.0))
+        else:
+            span = configuration["span"]
+        angles = np.linspace(0.0, np.deg2rad(span), count)
+        local_points = np.column_stack(
+            (radius * np.cos(angles), radius * np.sin(angles), np.zeros(count))
+        )
+        rotation = cv2.Rodrigues(generator.normal(size=3))[0]
+        center = generator.uniform(0.0, 5.0, 3)
+        normal = rotation[:, 2]
+        points = (rotation @ local_points.T).T + center
+        points += generator.normal(0.0, noise, points.shape)
+    else:
+        center = generator.uniform(-2.0, 2.0, 3)
+        radius = float(generator.uniform(1.0, 5.0))
+        normal = generator.normal(size=3)
+        normal /= np.linalg.norm(normal)
+        point_seed = int(generator.integers(0, np.iinfo(np.uint32).max, dtype=np.uint32))
+        point_generator = np.random.default_rng(point_seed)
+        points = _generate_circle_points(
+            point_generator,
+            center,
+            radius,
+            normal,
+            count,
+            configuration["span"],
+            noise,
+            configuration["distribution"],
+        )
+
+    outlier_count = int(configuration["outlier_ratio"] * count)
+    if outlier_count:
+        # The legacy source declares `int Perturb = 0.01`, so the effective
+        # perturbation is zero and the outlier coordinates are integers in [10, 20].
+        outliers = generator.integers(10, 21, size=(outlier_count, 3)).astype(float)
+        points = np.vstack((points, outliers))
+    return center, radius, normal, points
 
 
 def _record_circle_fit(records, points, center, radius, normal, metadata, method, seed, noise):
@@ -201,37 +313,98 @@ def _record_circle_fit(records, points, center, radius, normal, metadata, method
     records.append(record)
 
 
-def run_three_dimensional_study(trials, seed, profile):
+def _run_pcl_batch(samples, executable):
+    executable = Path(executable).resolve()
+    if not executable.is_file():
+        raise FileNotFoundError(f"PCL executable does not exist: {executable}")
+
+    with tempfile.TemporaryDirectory(prefix="circular-center-pcl-") as directory:
+        input_path = Path(directory) / "points.csv"
+        output_path = Path(directory) / "fits.csv"
+        with input_path.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(("sample_id", "distance_threshold", "x", "y", "z"))
+            for sample in samples:
+                for point in sample["points"]:
+                    writer.writerow(
+                        (sample["id"], sample["pcl_threshold"], point[0], point[1], point[2])
+                    )
+
+        completed = subprocess.run(
+            (str(executable), str(input_path), str(output_path)),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            message = completed.stderr.strip() or completed.stdout.strip()
+            raise RuntimeError(f"PCL batch fitting failed: {message}")
+
+        with output_path.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+
+    results = {}
+    for row in rows:
+        sample_id = int(row["sample_id"])
+        if sample_id in results:
+            raise RuntimeError(f"duplicate PCL result for sample {sample_id}")
+        results[sample_id] = row
+    return results
+
+
+def _append_pcl_records(records, samples, executable):
+    results = _run_pcl_batch(samples, executable)
+    for sample in samples:
+        record = _base_record(*sample["metadata"], "pcl_ransac")
+        row = results.get(sample["id"])
+        if row is None:
+            records.append(record)
+            continue
+        record["elapsed_seconds"] = float(row["elapsed_seconds"])
+        values = np.array(
+            [
+                float(row["center_x"]),
+                float(row["center_y"]),
+                float(row["center_z"]),
+                float(row["radius"]),
+                float(row["normal_x"]),
+                float(row["normal_y"]),
+                float(row["normal_z"]),
+            ]
+        )
+        normal_norm = np.linalg.norm(values[4:])
+        if row["success"] == "1" and np.all(np.isfinite(values)) and normal_norm > 0.0:
+            record.update(
+                success=True,
+                center_error_m=float(np.linalg.norm(values[:3] - sample["center"])),
+                radius_error_m=float(abs(values[3] - sample["radius"])),
+                normal_error_deg=_unoriented_normal_error(
+                    values[4:] / normal_norm,
+                    sample["normal"],
+                ),
+            )
+        records.append(record)
+
+
+def run_three_dimensional_study(trials, seed, profile, pcl_executable=None):
     records = []
+    pcl_samples = []
+    sample_id = 0
     for configuration_index, configuration in enumerate(_three_dimensional_configurations(profile)):
-        sweep, setting, count, span, noise, outlier_ratio, distribution = configuration
-        for trial in range(trials):
+        attempts = trials if trials is not None else configuration["default_trials"]
+        for trial in range(attempts):
             trial_seed = seed + 100_000 * configuration_index + trial
             generator = np.random.default_rng(trial_seed)
-            center = generator.uniform(-2.0, 2.0, 3)
-            radius = float(generator.uniform(1.0, 5.0))
-            normal = generator.normal(size=3)
-            normal /= np.linalg.norm(normal)
-            points = _generate_circle_points(
+            center, radius, normal, points = _generate_three_dimensional_sample(
                 generator,
-                center,
-                radius,
-                normal,
-                count,
-                span,
-                noise,
-                distribution,
+                configuration,
             )
-            outlier_count = int(round(outlier_ratio * count))
-            if outlier_count:
-                outliers = center + generator.uniform(
-                    -3.0 * radius,
-                    3.0 * radius,
-                    size=(outlier_count, 3),
-                )
-                points = np.vstack((points, outliers))
-                generator.shuffle(points)
-            metadata = ("3d_circle", sweep, setting, trial)
+            metadata = (
+                "3d_circle",
+                configuration["sweep"],
+                configuration["setting"],
+                trial,
+            )
             for method in ("cga", "cga_ransac"):
                 _record_circle_fit(
                     records,
@@ -242,8 +415,23 @@ def run_three_dimensional_study(trials, seed, profile):
                     metadata,
                     method,
                     trial_seed,
-                    noise,
+                    configuration["noise"],
                 )
+            if pcl_executable is not None:
+                pcl_samples.append(
+                    {
+                        "id": sample_id,
+                        "metadata": metadata,
+                        "points": points,
+                        "center": center,
+                        "radius": radius,
+                        "normal": normal,
+                        "pcl_threshold": configuration["pcl_threshold"],
+                    }
+                )
+                sample_id += 1
+    if pcl_executable is not None:
+        _append_pcl_records(records, pcl_samples, pcl_executable)
     return records
 
 
@@ -559,7 +747,12 @@ def _write_records(path, records):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=("smoke", "paper"), default="paper")
-    parser.add_argument("--trials", type=int, default=100)
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=None,
+        help="override trials per configuration; omit to use legacy paper counts",
+    )
     parser.add_argument("--seed", type=int, default=2025)
     parser.add_argument(
         "--studies",
@@ -572,21 +765,30 @@ def main():
         type=Path,
         default=Path("outputs/synthetic"),
     )
+    parser.add_argument(
+        "--pcl-executable",
+        type=Path,
+        help="optional circular_center_pcl_batch executable for the PCL RANSAC baseline",
+    )
     arguments = parser.parse_args()
-    if arguments.trials <= 0:
+    if arguments.trials is not None and arguments.trials <= 0:
         parser.error("--trials must be positive")
 
     records = []
     if "3d" in arguments.studies:
         records.extend(
-            run_three_dimensional_study(arguments.trials, arguments.seed, arguments.profile)
+            run_three_dimensional_study(
+                arguments.trials,
+                arguments.seed,
+                arguments.profile,
+                arguments.pcl_executable,
+            )
         )
+    non_legacy_trials = 100 if arguments.trials is None else arguments.trials
     if "2d" in arguments.studies:
-        records.extend(
-            run_two_dimensional_study(arguments.trials, arguments.seed, arguments.profile)
-        )
+        records.extend(run_two_dimensional_study(non_legacy_trials, arguments.seed, arguments.profile))
     if "pose" in arguments.studies:
-        records.extend(run_pose_study(arguments.trials, arguments.seed, arguments.profile))
+        records.extend(run_pose_study(non_legacy_trials, arguments.seed, arguments.profile))
 
     arguments.output_directory.mkdir(parents=True, exist_ok=True)
     raw_path = arguments.output_directory / "raw_results.csv"
@@ -597,6 +799,11 @@ def main():
         "seed": arguments.seed,
         "studies": list(arguments.studies),
         "intrinsic_matrix": INTRINSIC.tolist(),
+        "pcl_executable": (
+            str(arguments.pcl_executable.resolve())
+            if arguments.pcl_executable is not None
+            else None
+        ),
     }
     _write_records(raw_path, records)
     summary_path.write_text(
