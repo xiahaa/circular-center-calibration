@@ -13,7 +13,6 @@ from .cga_joint_fitting import (
 )
 from .types import CircleFitError, CircleFitResult, FitStatus
 
-
 CircleTuple = Tuple[np.ndarray, float, np.ndarray]
 CircleFitter = Callable[[np.ndarray], Union[CircleTuple, CircleFitResult]]
 

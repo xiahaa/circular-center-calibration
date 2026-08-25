@@ -1,0 +1,8 @@
+schema_version: 1
+name: "CGA"
+kind: center3d
+description: "Direct conformal-geometric-algebra circle fitting from the paper."
+implementation:
+  module: circular_center.methods.center3d.cga
+  class: CGA
+parameters: {}

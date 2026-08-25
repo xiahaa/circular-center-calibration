@@ -7,7 +7,6 @@ import numpy as np
 
 from .types import CircleFitError, FitStatus
 
-
 CircleTuple = Tuple[np.ndarray, float, np.ndarray]
 
 # The last two conformal coordinates form a null pair.  The resulting

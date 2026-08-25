@@ -6,9 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
-
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPOSITORY_ROOT / "python" / "src"))
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from circular_center.center3d import (  # noqa: E402
     CircleFitError,

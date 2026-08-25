@@ -1,0 +1,12 @@
+schema_version: 1
+name: "Refined Center"
+kind: center2d
+description: "Two-candidate projected-center refinement proposed in the paper."
+implementation:
+  module: circular_center.methods.center2d.refined_center
+  class: RefinedCenter
+parameters:
+  search_ratio: 0.5
+  directions: 16
+  levels_px: [2.0, 0.5, 0.1]
+  nms_scale: 0.08

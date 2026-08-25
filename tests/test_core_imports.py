@@ -7,12 +7,13 @@ from pathlib import Path
 
 import numpy as np
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPOSITORY_ROOT / "python" / "src"))
-
-from circular_center.center2d import get_ellipse_polynomial_coeff  # noqa: E402
-from circular_center.center2d import find_rectify_homography  # noqa: E402
+from circular_center.center2d import (
+    find_rectify_homography,  # noqa: E402
+    get_ellipse_polynomial_coeff,  # noqa: E402
+)
 from circular_center.center3d import circle_residuals  # noqa: E402
 
 

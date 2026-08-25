@@ -3,15 +3,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPOSITORY_ROOT / "python" / "src"))
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from circular_center.center2d import (  # noqa: E402
     get_ellipse_polynomial_coeff,

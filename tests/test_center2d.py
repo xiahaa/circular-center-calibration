@@ -6,15 +6,9 @@ from pathlib import Path
 
 import numpy as np
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPOSITORY_ROOT / "python" / "src"))
-
-from circular_center.center2d.ellipse_center_refinement import (  # noqa: E402
-    eval_distance_f0,
-    eval_distance_f0_batch,
-    get_ellipse_polynomial_coeff,
-)
 from circular_center.center2d import (  # noqa: E402
     ProjectedCenterError,
     ProjectedCenterStatus,
@@ -24,6 +18,11 @@ from circular_center.center2d import (  # noqa: E402
     quasi_ransac_iteration_bound,
     rectify_contour,
     refine_projected_center,
+)
+from circular_center.center2d.ellipse_center_refinement import (  # noqa: E402
+    eval_distance_f0,
+    eval_distance_f0_batch,
+    get_ellipse_polynomial_coeff,
 )
 
 

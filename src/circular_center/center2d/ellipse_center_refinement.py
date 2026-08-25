@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 
+
 def get_ellipse_polynomial_coeff(elps):
     a = elps[1][0]*0.5
     b = elps[1][1]*0.5

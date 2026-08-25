@@ -1,0 +1,14 @@
+schema_version: 1
+name: "CGA-RANSAC"
+kind: center3d
+description: "Robust CGA circle fitting from the paper."
+implementation:
+  module: circular_center.methods.center3d.cga_ransac
+  class: CGARANSAC
+parameters:
+  residual_threshold_m: 0.015
+  max_iterations: 500
+  sample_size: 5
+  minimum_inliers: null
+  confidence: 0.99
+  seed: 2025

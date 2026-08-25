@@ -5,15 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPOSITORY_ROOT / "python" / "src"))
+sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from circular_center.center2d import (  # noqa: E402
     QuasiRansacError,
@@ -26,7 +25,6 @@ from circular_center.center3d import (  # noqa: E402
     fit_cga_circle,
     fit_circle_ransac,
 )
-
 
 INTRINSIC = np.array(
     [[600.0, 0.0, 640.0], [0.0, 600.0, 480.0], [0.0, 0.0, 1.0]]

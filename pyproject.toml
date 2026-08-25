@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "circular-center-calibration"
 version = "0.1.0"
-description = "Minimal 3D and 2D circular-center estimation reference implementation"
+description = "Modular 3D and 2D circular-center estimation and calibration experiments"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
@@ -16,27 +16,39 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.17",
+    "PyYAML>=5.4",
 ]
 
 [project.optional-dependencies]
 vision = [
     "opencv-python>=4.5",
 ]
+experiments = [
+    "opencv-python>=4.5",
+    "scipy>=1.7",
+]
 dev = [
     "pytest>=7,<9",
     "ruff>=0.4",
 ]
 
+[project.scripts]
+circular-center-run = "circular_center.experiments.runner:main"
+
 [tool.setuptools]
-package-dir = {"" = "python/src"}
+package-dir = {"" = "src"}
 license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
 
 [tool.setuptools.packages.find]
-where = ["python/src"]
+where = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["python/tests"]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = ["E402"]
