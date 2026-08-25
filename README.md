@@ -11,10 +11,6 @@ The repository contains only the reusable contributions:
   physical circular center;
 - homography-based or quasi-RANSAC disambiguation of the two 2D candidates.
 
-It intentionally excludes large-scale evaluation infrastructure, Gazebo and
-ROS capture pipelines, real datasets, paper-figure generation, and historical
-prototypes. Those components are not required to use or verify the algorithms.
-
 ## Repository layout
 
 ```text
@@ -36,7 +32,10 @@ Ubuntu 20.04 or newer is recommended.
 
 ## data
 
-Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing)
+Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing). In our paper, we have also tested the proposed algorithm on the synthetic dataset from [velo2cam](https://github.com/beltransen/velo2cam_calibration), [Fastcalib](https://github.com/hku-mars/FAST-Calib), and [PBACalib](https://github.com/chenfeiyi/PBACalib). Please visit their Github repository for more information on their released data. We do not re-distributed those data here.
+
+Due to privacy issues, we cannot release the raw rosbag files. Instead, we release the image-pcd pair extracted from the rosbag and mask out human face to perserve the privacy.
+
 
 ### Python
 
@@ -83,8 +82,7 @@ python experiments/basic_experiments.py \
 
 The basic experiment compares direct CGA with CGA-RANSAC under outliers,
 compares the fitted ellipse center with the proposed 2D candidate set, and
-checks quasi-RANSAC pose recovery. It is a compact functional validation, not
-the full internal evaluation suite.
+checks quasi-RANSAC pose recovery.
 
 ## Python API
 
@@ -105,7 +103,7 @@ candidates because one projected ellipse is geometrically ambiguous.
 
 ## License
 
-Original code in this public branch is licensed under Apache-2.0. No GPL code,
+The code in this public branch is licensed under Apache-2.0. No GPL code,
 AAMED source, dataset, or vendored third-party implementation is included. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for separately installed
 dependencies.
