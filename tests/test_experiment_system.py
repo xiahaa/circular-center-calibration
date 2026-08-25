@@ -28,11 +28,37 @@ from experiments.qualitative_realworld.extraction3d import (  # noqa: E402
     extract_directional_boundary,
     select_target_cluster,
 )
+from experiments.synthetic_3d_accuracy.generators import (  # noqa: E402
+    add_reference_outliers,
+    generate_monte_carlo_sample,
+    make_generator,
+)
+from experiments.synthetic_3d_accuracy.protocol import (  # noqa: E402
+    load_profile,
+    load_protocol,
+)
 
 
 class ExperimentSystemTest(unittest.TestCase):
+    def test_outer_configs_are_grouped_by_experiment(self):
+        config_root = REPOSITORY_ROOT / "configs" / "experiments"
+        self.assertEqual(list(config_root.glob("*.yaml")), [])
+
+        config_paths = sorted(config_root.glob("*/*.yaml"))
+        self.assertTrue(config_paths)
+        for config_path in config_paths:
+            document = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(document["experiment"], config_path.parent.name)
+            self.assertIn(config_path.name, {"paper.yaml", "ci.yaml", "default.yaml"})
+
     def test_outer_config_stays_small_and_uses_paper_names(self):
-        source = REPOSITORY_ROOT / "configs" / "experiments" / "qualitative_realworld.yaml"
+        source = (
+            REPOSITORY_ROOT
+            / "configs"
+            / "experiments"
+            / "qualitative_realworld"
+            / "default.yaml"
+        )
         document = yaml.safe_load(source.read_text(encoding="utf-8"))
         self.assertEqual(
             set(document), {"schema_version", "experiment", "datasets", "methods"}
@@ -74,6 +100,36 @@ class ExperimentSystemTest(unittest.TestCase):
             ("CGA", "CGA-RANSAC", "PCL SACMODEL"),
         )
         self.assertEqual(methods["ambiguity"], ())
+
+    def test_synthetic_paper_profile_matches_released_protocol(self):
+        directory = REPOSITORY_ROOT / "experiments" / "synthetic_3d_accuracy"
+        protocol = load_protocol(directory)
+        profile = load_profile(directory, "paper")
+
+        self.assertEqual(profile["monte_carlo_trials"], 1000)
+        self.assertEqual(profile["outlier_trials"], 100)
+        self.assertEqual(profile["outlier_ratios"], [0.1, 0.2, 0.3, 0.4, 0.5])
+        scenarios = {item["name"]: item for item in protocol["monte_carlo"]["scenarios"]}
+        self.assertEqual(scenarios["limited_arc"]["arc_degrees"], 70.0)
+        self.assertEqual(scenarios["sparse_points"]["point_count"], 12)
+        self.assertEqual(scenarios["symmetric_distribution"]["point_count"], 20)
+        self.assertEqual(
+            protocol["paper_outputs"]["outlier"]["CGA"], "CGA-RANSAC"
+        )
+
+    def test_synthetic_generators_are_deterministic_and_use_integer_outliers(self):
+        directory = REPOSITORY_ROOT / "experiments" / "synthetic_3d_accuracy"
+        protocol = load_protocol(directory)
+        scenario = protocol["monte_carlo"]["scenarios"][0]
+        first = generate_monte_carlo_sample(make_generator(42), scenario)
+        second = generate_monte_carlo_sample(make_generator(42), scenario)
+        np.testing.assert_array_equal(first.points, second.points)
+
+        contaminated = add_reference_outliers(first, 0.3, make_generator(43), 10, 20)
+        outliers = contaminated.points[len(first.points) :]
+        self.assertEqual(len(outliers), 30)
+        self.assertTrue(np.all((outliers >= 10.0) & (outliers <= 20.0)))
+        np.testing.assert_array_equal(outliers, np.floor(outliers))
 
     def test_outer_config_rejects_duplicate_method_names(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

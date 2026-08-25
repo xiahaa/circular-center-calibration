@@ -1,0 +1,6 @@
+schema_version: 1
+name: paper
+timed_repetitions: 1000
+warmup_repetitions_per_process: 20
+process_repetitions: 5
+compare_to_paper_reference: true

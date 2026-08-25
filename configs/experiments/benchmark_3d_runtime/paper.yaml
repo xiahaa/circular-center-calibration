@@ -1,0 +1,7 @@
+schema_version: 1
+experiment: benchmark_3d_runtime
+datasets: [paper]
+methods:
+  2d: null
+  3d: [CGA, CGA-RANSAC, PCL SACMODEL]
+  ambiguity: null

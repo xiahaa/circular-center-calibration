@@ -1,0 +1,105 @@
+schema_version: 1
+seed: 42
+
+monte_carlo:
+  scenarios:
+    - name: isotropic_noise
+      panel: A
+      point_count: 100
+      noise_sigma_m: 0.2
+      distribution: uniform
+      arc_degrees: 360.0
+    - name: limited_arc
+      panel: B
+      point_count: 100
+      noise_sigma_m: 0.2
+      distribution: limited_nonuniform
+      arc_degrees: 70.0
+    - name: sparse_points
+      panel: C
+      point_count: 12
+      noise_sigma_m: 0.2
+      distribution: sparse_clusters
+      arc_degrees: 360.0
+    - name: symmetric_distribution
+      panel: D
+      point_count: 20
+      noise_sigma_m: 0.2
+      distribution: symmetric_nonuniform
+      arc_degrees: 200.0
+
+outlier:
+  base_circle:
+    point_count: 50
+    noise_sigma_m: 0.1
+    center_min_m: 0.0
+    center_max_m: 5.0
+    radius_min_m: 2.0
+    radius_max_m: 5.0
+  integer_coordinate_min: 10
+  integer_coordinate_max: 20
+
+# The historical experiment uses direct CGA for the figure and CGA-RANSAC for the table.
+# A newly registered method absent from this map is run in both studies.
+method_applicability:
+  CGA: [monte_carlo]
+  CGA-RANSAC: [outlier]
+  PCL SACMODEL: [monte_carlo, outlier]
+
+# These are experiment-protocol values from the released C++ benchmark, not
+# replacements for the centrally managed method defaults.
+method_parameters:
+  monte_carlo:
+    PCL SACMODEL:
+      residual_threshold_m: 0.1
+      max_iterations: 1000
+      confidence: 0.99
+  outlier:
+    PCL SACMODEL:
+      residual_threshold_m: 0.1
+      max_iterations: 1000
+      confidence: 0.99
+    CGA-RANSAC:
+      residual_threshold_m: 0.2
+      max_iterations: 1000
+      sample_size: 5
+      minimum_inliers: 5
+      confidence: 0.99
+      seed: 5489
+      adaptive: false
+      tie_break_median: false
+      refinement_passes: 1
+
+paper_outputs:
+  monte_carlo:
+    PCL: PCL SACMODEL
+    CGA: CGA
+  outlier:
+    PCL: PCL SACMODEL
+    CGA: CGA-RANSAC
+
+paper_reference:
+  # Captured means from the historical four-scenario benchmark with seed 42.
+  # PCL's limited-arc tail can vary with the installed PCL version.
+  monte_carlo_mean_center_error_m:
+    isotropic_noise: {PCL: 0.1506342, CGA: 0.04209934}
+    limited_arc: {PCL: 2.2524694, CGA: 0.5628603}
+    sparse_points: {PCL: 1.2623944, CGA: 0.3682271}
+    symmetric_distribution: {PCL: 0.4625945, CGA: 0.1468606}
+  # Published full-profile outlier means retained locally as golden values.
+  outlier_mean_center_error_m:
+    "0.1": {PCL: 0.0816835, CGA: 0.0353876}
+    "0.2": {PCL: 0.0870222, CGA: 0.0346801}
+    "0.3": {PCL: 0.0826003, CGA: 0.0355546}
+    "0.4": {PCL: 0.0774704, CGA: 0.0362688}
+    "0.5": {PCL: 0.0777025, CGA: 0.0364258}
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/synthetic_3d_accuracy
+  protocol_document: experiments/synthetic_3d_accuracy/PROTOCOL.md
+  exact_monte_carlo_protocol: false
+  monte_carlo_note: NumPy MT19937 preserves the engine family and distributions, but not the implementation-specific C++ distribution bit stream.
+  exact_outlier_protocol: false
+  outlier_note: The original 100 base pcn/centers files were not published, so this experiment deterministically regenerates statistically equivalent noisy full circles before appending protocol-compatible integer outliers.

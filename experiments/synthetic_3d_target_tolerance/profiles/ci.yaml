@@ -1,0 +1,5 @@
+schema_version: 1
+name: ci
+trials_per_setting: 2
+magnitudes: [0.0, 0.05]
+compare_to_paper_reference: false

@@ -52,3 +52,11 @@ jobs:
         run: |
           python -m pip install -e '.[all]'
           python -m pytest tests/test_method_registry.py -q
+          circular-center-run configs/experiments/synthetic_3d_accuracy/ci.yaml \
+            --output-dir outputs/synthetic_3d_accuracy_ci
+          circular-center-run configs/experiments/synthetic_3d_stress/ci.yaml \
+            --output-dir outputs/synthetic_3d_stress_ci
+          circular-center-run configs/experiments/synthetic_3d_target_tolerance/ci.yaml \
+            --output-dir outputs/synthetic_3d_target_tolerance_ci
+          circular-center-run configs/experiments/benchmark_3d_runtime/ci.yaml \
+            --output-dir outputs/benchmark_3d_runtime_ci

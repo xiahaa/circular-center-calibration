@@ -1,0 +1,45 @@
+schema_version: 1
+seed: 2025
+
+input:
+  point_count: 64
+  radius_m: 0.12
+  noise_sigma_m: 0.0006
+
+method_order: [CGA, CGA-RANSAC, PCL SACMODEL]
+
+method_parameters:
+  CGA: {}
+  CGA-RANSAC:
+    residual_threshold_m: 0.0015
+    max_iterations: 20
+    sample_size: 5
+    minimum_inliers: null
+    confidence: 0.99
+    seed: 2025
+    adaptive: false
+    tie_break_median: true
+    refinement_passes: 2
+  PCL SACMODEL:
+    residual_threshold_m: 0.0015
+    max_iterations: 500
+    confidence: 0.99
+    minimum_radius_m: 0.05
+    maximum_radius_m: 0.20
+
+paper_outputs:
+  tex: runtime_table.tex
+
+paper_reference:
+  hardware: Intel Xeon Gold 5218
+  methods:
+    CGA: {p50_ms: 1.407, p95_ms: 1.489, peak_rss_mib: 38.5}
+    CGA-RANSAC: {p50_ms: 6.130, p95_ms: 7.769, peak_rss_mib: 40.0}
+    PCL SACMODEL: {p50_ms: 0.098, p95_ms: 0.100, peak_rss_mib: 37.6}
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/benchmark_3d_runtime
+  paper_table: Table III
+  note: Each method is measured sequentially in isolated processes. Latencies and RSS depend on hardware, OS, compiler, Python, PCL, and process layout and are not numerical correctness criteria.

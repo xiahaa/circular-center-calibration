@@ -1,0 +1,57 @@
+schema_version: 1
+seed: 2025
+
+target:
+  radius_m: 0.12
+  point_count: 64
+  visible_arc_degrees: 180.0
+  noise_sigma_over_radius: 0.005
+  center_min_m: -2.0
+  center_max_m: 2.0
+  axis_semiaxis_scale: 0.75
+
+deformations: [normal_warp, axis_deviation]
+boundary_m: 0.01
+
+method_parameters:
+  CGA: {}
+  CGA-RANSAC:
+    residual_threshold_m: 0.0015
+    max_iterations: 500
+    sample_size: 5
+    minimum_inliers: null
+    confidence: 0.99
+    seed: 2025
+    adaptive: true
+    tie_break_median: true
+    refinement_passes: 2
+  PCL SACMODEL:
+    residual_threshold_m: 0.0001
+    max_iterations: 1000
+    confidence: 0.99
+    minimum_radius_m: 0.05
+    maximum_radius_m: 0.20
+
+paper_outputs:
+  pdf: target_tolerance.pdf
+  png: target_tolerance.png
+
+# Values decoded from the vector paths in the published Figure 7 PDF.
+paper_reference:
+  magnitudes: [0.0, 0.0025, 0.005, 0.01, 0.02, 0.05]
+  mean_center_error_mm:
+    normal_warp:
+      PCL SACMODEL: [1.640610, 1.690563, 1.780208, 2.136358, 3.229918, 9.405698]
+      CGA: [0.297826, 0.407722, 0.641015, 1.154313, 2.179290, 5.499663]
+      CGA-RANSAC: [0.298096, 0.407992, 0.641555, 1.164574, 2.361280, 8.773593]
+    axis_deviation:
+      PCL SACMODEL: [1.691385, 1.732960, 1.948431, 2.650410, 4.939037, 14.663202]
+      CGA: [0.300220, 0.556066, 1.013792, 1.945633, 3.948431, 9.897262]
+      CGA-RANSAC: [0.301019, 0.556866, 1.014192, 1.953628, 4.158705, 13.942834]
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/synthetic_3d_target_tolerance
+  paper_figure: Figure 7
+  note: The paper publishes only the deformation range and final curves. The 64-point 180-degree quadratic-warp/ellipse protocol is deterministically recovered from the CGA curve; original trial data and robust-method thresholds were not released.

@@ -1,0 +1,7 @@
+schema_version: 1
+experiment: synthetic_3d_stress
+datasets: [paper]
+methods:
+  2d: null
+  3d: [CGA, PCL SACMODEL]
+  ambiguity: null
