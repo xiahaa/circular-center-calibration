@@ -10,6 +10,7 @@ copyrights and license terms:
 - OpenCV, optionally used for ellipse fitting, contour rectification, PnP, and
   quasi-RANSAC.
 - Matplotlib, optionally used to plot synthetic experiment summaries.
+- PCL, optionally used by the separately built 3D circle RANSAC benchmark.
 
-AAMED, Miniball, ROS, Gazebo, PCL, real datasets, and internal-only evaluation
+AAMED, Miniball, ROS, Gazebo, real datasets, and internal-only evaluation
 tooling are not included or required by this branch.

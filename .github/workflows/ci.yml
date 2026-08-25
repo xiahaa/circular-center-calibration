@@ -32,3 +32,30 @@ jobs:
             --profile smoke --trials 1 --output-directory outputs/synthetic-ci
           python experiments/synthetic/plot_results.py \
             outputs/synthetic-ci/summary.json --output outputs/synthetic-ci/summary.png
+
+  pcl-baseline:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install PCL and build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpcl-dev ninja-build
+      - name: Build optional PCL adapter
+        run: |
+          cmake -S . -B build-pcl -G Ninja \
+            -DCCC_BUILD_PCL_EXPERIMENTS=ON \
+            -DCCC_BUILD_TESTS=OFF \
+            -DCCC_BUILD_EXAMPLES=OFF
+          cmake --build build-pcl --target circular_center_pcl_batch
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+      - name: Run PCL comparison smoke test
+        run: |
+          python -m pip install -e '.[experiments]'
+          python experiments/synthetic/run_experiments.py \
+            --profile smoke \
+            --studies 3d \
+            --trials 1 \
+            --pcl-executable build-pcl/experiments/synthetic/circular_center_pcl_batch \
+            --output-directory outputs/pcl-ci
+          python -c "import json; data=json.load(open('outputs/pcl-ci/summary.json')); assert any(group['method'] == 'pcl_ransac' for group in data['groups'])"
