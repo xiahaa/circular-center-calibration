@@ -270,13 +270,20 @@ def _run_dataset(
     method_names = {
         "2d": methods["2d"].name,
         "3d": methods["3d"].name,
+        "ambiguity": (
+            None if methods["ambiguity"] is None else methods["ambiguity"].name
+        ),
     }
     for index, measurement in enumerate(measurements):
         image = cv2.imread(str(measurement.pair.image_path), cv2.IMREAD_COLOR)
+        cloud = read_pcd(measurement.pair.point_cloud_path)
         selected = (
             measurement.center2d.primary
             if pose is None
             else np.asarray(pose["selected_points"])[index]
+        )
+        calibration_inlier = (
+            None if pose is None else bool(pose["inlier_mask"][index])
         )
         destination = output_directory / "{}.png".format(measurement.pair.frame_id)
         reprojection_error = render_qualitative_frame(
@@ -288,18 +295,20 @@ def _run_dataset(
             selected_center=selected,
             center3d=measurement.center3d.center,
             circle_radius_m=measurement.center3d.radius,
-            cluster_points=measurement.cluster_points,
+            point_cloud_points=cloud.points,
+            point_cloud_intensity=cloud.intensity,
             methods=method_names,
             destination=destination,
             config=evaluation_config,
             rotation=None if pose is None else pose["rotation"],
             translation=None if pose is None else pose["translation"],
+            calibration_inlier=calibration_inlier,
         )
         summary = _measurement_summary(measurement)
         summary["selected_center2d_px"] = selected
         summary["qualitative_image"] = destination.relative_to(context.output_directory)
         if pose is not None:
-            summary["calibration_inlier"] = bool(pose["inlier_mask"][index])
+            summary["calibration_inlier"] = calibration_inlier
         if reprojection_error is not None:
             summary["reprojection_error_px"] = reprojection_error
         frame_summaries.append(summary)

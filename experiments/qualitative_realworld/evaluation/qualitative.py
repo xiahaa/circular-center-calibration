@@ -31,6 +31,93 @@ def _project(
     return projected, visible
 
 
+def _draw_projected_cloud(
+    canvas: np.ndarray,
+    points: np.ndarray,
+    intensity: np.ndarray,
+    rotation: np.ndarray,
+    translation: np.ndarray,
+    intrinsic: np.ndarray,
+    draw: Mapping[str, object],
+) -> None:
+    points = np.asarray(points, dtype=float)
+    intensity = np.asarray(intensity, dtype=float).reshape(-1)
+    if len(points) != len(intensity):
+        raise ValueError("point-cloud points and intensity must have the same length")
+
+    maximum = int(draw["maximum_projected_points"])
+    stride = max(1, int(np.ceil(len(points) / maximum)))
+    points = points[::stride]
+    intensity = intensity[::stride]
+    projected, visible = _project(points, rotation, translation, intrinsic)
+    height, width = canvas.shape[:2]
+    inside = (
+        visible
+        & (projected[:, 0] >= 0.0)
+        & (projected[:, 0] < width)
+        & (projected[:, 1] >= 0.0)
+        & (projected[:, 1] < height)
+    )
+    pixels = np.rint(projected[inside]).astype(int)
+    if len(pixels) == 0:
+        return
+
+    minimum, maximum = (float(value) for value in draw["intensity_range"])
+    scaled = np.clip((intensity[inside] - minimum) / (maximum - minimum), 0.0, 1.0)
+    colors = cv2.applyColorMap(
+        np.rint(255.0 * scaled).astype(np.uint8).reshape(-1, 1),
+        cv2.COLORMAP_JET,
+    ).reshape(-1, 3)
+    overlay = canvas.copy()
+    radius = int(draw["projected_point_radius_px"])
+    for pixel, color in zip(pixels, colors):
+        cv2.circle(
+            overlay,
+            tuple(pixel),
+            radius,
+            tuple(int(value) for value in color),
+            -1,
+            cv2.LINE_AA,
+        )
+    opacity = float(draw["projected_point_opacity"])
+    cv2.addWeighted(overlay, opacity, canvas, 1.0 - opacity, 0.0, canvas)
+
+
+def _draw_label(canvas: np.ndarray, lines: list[str], draw: Mapping[str, object]) -> None:
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = float(draw["label_font_scale"])
+    thickness = int(draw["label_thickness_px"])
+    padding = int(draw["label_padding_px"])
+    line_gap = int(draw["label_line_gap_px"])
+    sizes = [cv2.getTextSize(line, font, scale, thickness)[0] for line in lines]
+    line_height = max(height for _, height in sizes)
+    panel_width = max(width for width, _ in sizes) + 2 * padding
+    panel_height = len(lines) * line_height + (len(lines) - 1) * line_gap + 2 * padding
+    left, top = 12, 12
+    overlay = canvas.copy()
+    cv2.rectangle(
+        overlay,
+        (left, top),
+        (left + panel_width, top + panel_height),
+        (15, 15, 15),
+        -1,
+    )
+    opacity = float(draw["label_background_opacity"])
+    cv2.addWeighted(overlay, opacity, canvas, 1.0 - opacity, 0.0, canvas)
+    baseline_y = top + padding + line_height
+    for index, line in enumerate(lines):
+        cv2.putText(
+            canvas,
+            line,
+            (left + padding, baseline_y + index * (line_height + line_gap)),
+            font,
+            scale,
+            (245, 245, 245),
+            thickness,
+            cv2.LINE_AA,
+        )
+
+
 def render_qualitative_frame(
     image: np.ndarray,
     *,
@@ -41,15 +128,30 @@ def render_qualitative_frame(
     selected_center: np.ndarray,
     center3d: np.ndarray,
     circle_radius_m: float,
-    cluster_points: np.ndarray,
-    methods: Mapping[str, str],
+    point_cloud_points: np.ndarray,
+    point_cloud_intensity: np.ndarray,
+    methods: Mapping[str, Optional[str]],
     destination: Path,
     config: Mapping[str, object],
     rotation: Optional[np.ndarray] = None,
     translation: Optional[np.ndarray] = None,
+    calibration_inlier: Optional[bool] = None,
 ) -> Optional[float]:
     canvas = cv2.undistort(image, intrinsic, distortion, None, intrinsic)
     draw = config["draw"]
+
+    reprojection_error = None
+    if rotation is not None and translation is not None:
+        _draw_projected_cloud(
+            canvas,
+            point_cloud_points,
+            point_cloud_intensity,
+            rotation,
+            translation,
+            intrinsic,
+            draw,
+        )
+
     cv2.ellipse(
         canvas,
         rectified_cv_ellipse,
@@ -76,29 +178,7 @@ def render_qualitative_frame(
         cv2.LINE_AA,
     )
 
-    reprojection_error = None
     if rotation is not None and translation is not None:
-        maximum = int(draw["maximum_projected_cluster_points"])
-        stride = max(1, int(np.ceil(len(cluster_points) / maximum)))
-        projected_cluster, visible = _project(
-            cluster_points[::stride], rotation, translation, intrinsic
-        )
-        height, width = canvas.shape[:2]
-        inside = (
-            visible
-            & (projected_cluster[:, 0] >= 0.0)
-            & (projected_cluster[:, 0] < width)
-            & (projected_cluster[:, 1] >= 0.0)
-            & (projected_cluster[:, 1] < height)
-        )
-        for pixel in projected_cluster[inside]:
-            cv2.circle(
-                canvas,
-                tuple(np.rint(pixel).astype(int)),
-                int(draw["projected_point_radius_px"]),
-                _color(config, "projected_cluster"),
-                -1,
-            )
         projected_center, center_visible = _project(
             np.asarray(center3d).reshape(1, 3), rotation, translation, intrinsic
         )
@@ -123,31 +203,15 @@ def render_qualitative_frame(
             )
             reprojection_error = float(np.linalg.norm(projected_center[0] - selected_center))
 
-    label = "{} | {} | r={:.3f} m".format(
-        methods["2d"], methods["3d"], circle_radius_m
+    method_line = " + ".join(
+        methods[name] for name in ("2d", "3d", "ambiguity") if methods.get(name)
     )
+    metric_line = "radius={:.3f} m".format(circle_radius_m)
     if reprojection_error is not None:
-        label += " | e={:.2f} px".format(reprojection_error)
-    cv2.putText(
-        canvas,
-        label,
-        (20, 32),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.65,
-        (255, 255, 255),
-        3,
-        cv2.LINE_AA,
-    )
-    cv2.putText(
-        canvas,
-        label,
-        (20, 32),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.65,
-        (20, 20, 20),
-        1,
-        cv2.LINE_AA,
-    )
+        metric_line += " | reprojection={:.2f} px".format(reprojection_error)
+    if calibration_inlier is not None:
+        metric_line += " | {}".format("inlier" if calibration_inlier else "outlier")
+    _draw_label(canvas, [method_line, metric_line], draw)
     destination.parent.mkdir(parents=True, exist_ok=True)
     if not cv2.imwrite(str(destination), canvas):
         raise OSError("failed to write {}".format(destination))
