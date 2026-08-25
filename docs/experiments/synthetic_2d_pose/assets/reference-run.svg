@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+  <title id="title">Figure 9 reference run pose errors</title>
+  <desc id="desc">Ellipse and mass centers have larger errors than refined and RANSAC centers.</desc>
+  <style>
+    text { font-family: Arial, sans-serif; fill: #24292f; }
+    .axis { stroke: #57606a; stroke-width: 1.5; }
+    .grid { stroke: #d0d7de; stroke-width: 1; stroke-dasharray: 4 4; }
+    .ellipse { fill: #b9d9e8; stroke: #3559e0; stroke-width: 2; }
+    .mass { fill: #a9e9a5; stroke: #2e9e42; stroke-width: 2; }
+    .refined { fill: #ef9c9c; stroke: #ef4141; stroke-width: 2; }
+    .ransac { fill: #dca9df; stroke: #9c3aa4; stroke-width: 2; }
+  </style>
+  <rect width="960" height="520" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="20">2D center pose error: reference run</text>
+  <line class="grid" x1="70" y1="390" x2="930" y2="390"/>
+  <line class="grid" x1="70" y1="285" x2="930" y2="285"/>
+  <line class="grid" x1="70" y1="180" x2="930" y2="180"/>
+  <line class="grid" x1="70" y1="75" x2="930" y2="75"/>
+  <line class="axis" x1="70" y1="55" x2="70" y2="390"/>
+  <line class="axis" x1="70" y1="390" x2="930" y2="390"/>
+  <text x="58" y="395" text-anchor="end" font-size="12">0.0</text>
+  <text x="58" y="290" text-anchor="end" font-size="12">0.5</text>
+  <text x="58" y="185" text-anchor="end" font-size="12">1.0</text>
+  <text x="58" y="80" text-anchor="end" font-size="12">1.5</text>
+  <text x="20" y="230" text-anchor="middle" font-size="14" transform="rotate(-90 20 230)">Mean error</text>
+
+  <rect class="ellipse" x="115" y="72.8" width="42" height="317.2"/>
+  <rect class="mass" x="159" y="96.7" width="42" height="293.3"/>
+  <rect class="refined" x="203" y="301.6" width="42" height="88.4"/>
+  <rect class="ransac" x="247" y="307.2" width="42" height="82.8"/>
+  <text x="136" y="65" text-anchor="middle" font-size="11">1.511</text>
+  <text x="180" y="89" text-anchor="middle" font-size="11">1.397</text>
+  <text x="224" y="294" text-anchor="middle" font-size="11">0.421</text>
+  <text x="268" y="300" text-anchor="middle" font-size="11">0.394</text>
+
+  <rect class="ellipse" x="385" y="382.6" width="42" height="7.4"/>
+  <rect class="mass" x="429" y="383.1" width="42" height="6.9"/>
+  <rect class="refined" x="473" y="388.9" width="42" height="1.1"/>
+  <rect class="ransac" x="517" y="389" width="42" height="1"/>
+  <text x="406" y="374" text-anchor="middle" font-size="11">0.035</text>
+  <text x="450" y="359" text-anchor="middle" font-size="11">0.033</text>
+  <text x="494" y="374" text-anchor="middle" font-size="11">0.005</text>
+  <text x="538" y="359" text-anchor="middle" font-size="11">0.001</text>
+
+  <rect class="ellipse" x="655" y="285.9" width="42" height="104.1"/>
+  <rect class="mass" x="699" y="287.9" width="42" height="102.1"/>
+  <rect class="refined" x="743" y="379.4" width="42" height="10.6"/>
+  <rect class="ransac" x="787" y="388.9" width="42" height="1.1"/>
+  <text x="676" y="278" text-anchor="middle" font-size="11">0.496</text>
+  <text x="720" y="280" text-anchor="middle" font-size="11">0.486</text>
+  <text x="764" y="372" text-anchor="middle" font-size="11">0.051</text>
+  <text x="808" y="372" text-anchor="middle" font-size="11">0.005</text>
+
+  <text x="202" y="418" text-anchor="middle" font-size="14">Reprojection error</text>
+  <text x="472" y="418" text-anchor="middle" font-size="14">Rotation error</text>
+  <text x="742" y="418" text-anchor="middle" font-size="14">Translation error</text>
+
+  <rect class="ellipse" x="155" y="460" width="18" height="12"/>
+  <text x="179" y="471" font-size="12">Ellipse Center</text>
+  <rect class="mass" x="315" y="460" width="18" height="12"/>
+  <text x="339" y="471" font-size="12">Mass Center</text>
+  <rect class="refined" x="465" y="460" width="18" height="12"/>
+  <text x="489" y="471" font-size="12">Refined Center</text>
+  <rect class="ransac" x="625" y="460" width="18" height="12"/>
+  <text x="649" y="471" font-size="12">RANSAC Center</text>
+</svg>
