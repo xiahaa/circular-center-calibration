@@ -1,0 +1,12 @@
+red_mask:
+  low_hue_max: 12
+  high_hue_min: 168
+  minimum_saturation: 80
+  minimum_value: 50
+  close_kernel_px: 9
+  close_iterations: 2
+ellipse_candidate:
+  minimum_board_area_px2: 3000.0
+  minimum_hole_area_px2: 300.0
+  hole_to_board_area_ratio: [0.03, 0.60]
+  minimum_axis_ratio: 0.35

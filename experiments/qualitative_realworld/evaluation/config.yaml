@@ -1,0 +1,11 @@
+colors_bgr:
+  ellipse: [0, 220, 255]
+  candidate: [0, 140, 255]
+  selected_center: [0, 255, 0]
+  projected_3d_center: [255, 255, 0]
+  projected_cluster: [255, 80, 0]
+draw:
+  ellipse_thickness_px: 2
+  center_radius_px: 5
+  projected_point_radius_px: 1
+  maximum_projected_cluster_points: 500

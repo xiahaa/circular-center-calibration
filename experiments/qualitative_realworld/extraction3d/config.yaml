@@ -1,0 +1,13 @@
+reflectance:
+  minimum_intensity: 180.0
+  distance_range_m: [0.2, 8.0]
+clustering:
+  neighbor_radius_m: 0.10
+  minimum_points: 20
+  diameter_tolerance_m: 0.12
+  maximum_plane_rmse_m: 0.03
+boundary:
+  angular_bins: 24
+  minimum_points: 12
+fit_validation:
+  radius_tolerance_m: 0.04
