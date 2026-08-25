@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import sys
 import tempfile
 import unittest
@@ -20,6 +21,7 @@ from circular_center.interfaces import (  # noqa: E402
     AmbiguousCorrespondences,
     EllipseObservation,
 )
+from circular_center.methods.center3d import PCLUnavailableError  # noqa: E402
 from circular_center.registry import (  # noqa: E402
     MethodCatalog,
     MethodConfigurationError,
@@ -38,7 +40,10 @@ class MethodRegistryTest(unittest.TestCase):
             self.catalog.names("center2d"),
             ("Ellipse Center", "Mass Center", "Refined Center"),
         )
-        self.assertEqual(self.catalog.names("center3d"), ("CGA", "CGA-RANSAC"))
+        self.assertEqual(
+            self.catalog.names("center3d"),
+            ("CGA", "CGA-RANSAC", "PCL SACMODEL"),
+        )
         self.assertEqual(
             self.catalog.names("ambiguity"),
             ("Homography Validation", "Quasi-RANSAC"),
@@ -124,6 +129,43 @@ class MethodRegistryTest(unittest.TestCase):
         ).fit(contaminated)
         np.testing.assert_array_equal(plugin_robust.center, legacy_robust.center)
         np.testing.assert_array_equal(plugin_robust.inlier_mask, legacy_robust.inlier_mask)
+
+    def test_pcl_plugin_is_lazy_and_reports_a_missing_library(self):
+        angles = np.linspace(0.0, 2.0 * np.pi, 16, endpoint=False)
+        points = np.column_stack(
+            (np.cos(angles), np.sin(angles), np.zeros_like(angles))
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            missing = Path(temporary_directory) / "missing-pcl-library.so"
+            plugin = self.catalog.create(
+                "PCL SACMODEL", "center3d", {"library_path": str(missing)}
+            )
+            self.assertEqual(plugin.name, "PCL SACMODEL")
+            with self.assertRaisesRegex(PCLUnavailableError, "shared library is unavailable"):
+                plugin.fit(points)
+
+    @unittest.skipUnless(
+        os.environ.get("CIRCULAR_CENTER_PCL_LIBRARY"),
+        "PCL integration library is not configured",
+    )
+    def test_pcl_plugin_fits_an_exact_circle(self):
+        angles = np.linspace(0.0, 2.0 * np.pi, 64, endpoint=False)
+        expected_center = np.array([0.4, -0.3, 1.2])
+        points = expected_center + np.column_stack(
+            (0.8 * np.cos(angles), 0.8 * np.sin(angles), np.zeros_like(angles))
+        )
+        plugin = self.catalog.create(
+            "PCL SACMODEL",
+            "center3d",
+            {
+                "library_path": os.environ["CIRCULAR_CENTER_PCL_LIBRARY"],
+                "residual_threshold_m": 0.001,
+            },
+        )
+        result = plugin.fit(points)
+        np.testing.assert_allclose(result.center, expected_center, atol=1e-3)
+        self.assertAlmostEqual(result.radius, 0.8, delta=1e-3)
+        self.assertEqual(np.count_nonzero(result.inlier_mask), len(points))
 
     def test_quasi_ransac_wrapper_preserves_legacy_result(self):
         points = np.array(

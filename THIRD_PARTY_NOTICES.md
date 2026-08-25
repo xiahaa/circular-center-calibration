@@ -8,7 +8,8 @@ copyrights and license terms:
 - Eigen, used by the header-only C++ implementation;
 - NumPy, used by the Python implementation;
 - OpenCV, optionally used for ellipse fitting, contour rectification, PnP, and
-  quasi-RANSAC.
+  quasi-RANSAC;
+- PCL, optionally used by the `PCL SACMODEL` comparison baseline.
 
-AAMED, Miniball, ROS, Gazebo, PCL, real datasets, and internal evaluation
+AAMED, Miniball, ROS, Gazebo, real datasets, and internal evaluation
 tooling are not included or required by this branch.

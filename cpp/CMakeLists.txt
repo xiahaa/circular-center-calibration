@@ -11,6 +11,36 @@ target_include_directories(
 )
 target_link_libraries(circular_center_core INTERFACE Eigen3::Eigen)
 
+if(CCC_BUILD_PCL_BASELINE)
+    find_package(PCL 1.10 REQUIRED COMPONENTS common sample_consensus segmentation)
+
+    add_library(circular_center_pcl_sacmodel SHARED src/pcl_sacmodel_c_api.cpp)
+    target_compile_features(circular_center_pcl_sacmodel PRIVATE cxx_std_17)
+    target_include_directories(
+        circular_center_pcl_sacmodel
+        PRIVATE ${PCL_INCLUDE_DIRS}
+    )
+    target_link_directories(circular_center_pcl_sacmodel PRIVATE ${PCL_LIBRARY_DIRS})
+    target_compile_options(circular_center_pcl_sacmodel PRIVATE ${PCL_DEFINITIONS})
+    target_link_libraries(
+        circular_center_pcl_sacmodel
+        PUBLIC circular_center::core
+        PRIVATE ${PCL_LIBRARIES}
+    )
+
+    if(CCC_BUILD_TESTS)
+        add_executable(circular_center_pcl_sacmodel_test tests/test_pcl_sacmodel.cpp)
+        target_link_libraries(
+            circular_center_pcl_sacmodel_test
+            PRIVATE circular_center_pcl_sacmodel
+        )
+        add_test(
+            NAME circular_center.pcl_sacmodel_regression
+            COMMAND circular_center_pcl_sacmodel_test
+        )
+    endif()
+endif()
+
 if(CCC_BUILD_TESTS)
     add_executable(circular_center_header_smoke tests/header_smoke.cpp)
     target_link_libraries(circular_center_header_smoke PRIVATE circular_center::core)
