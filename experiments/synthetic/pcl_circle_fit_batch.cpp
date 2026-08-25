@@ -47,6 +47,12 @@ std::vector<std::string> split_csv(const std::string& line) {
     return fields;
 }
 
+void strip_carriage_return(std::string& line) {
+    if (!line.empty() && line.back() == '\r') {
+        line.pop_back();
+    }
+}
+
 std::vector<Sample> read_samples(const std::string& path) {
     std::ifstream input(path);
     if (!input) {
@@ -54,7 +60,11 @@ std::vector<Sample> read_samples(const std::string& path) {
     }
 
     std::string line;
-    if (!std::getline(input, line) || line != "sample_id,distance_threshold,x,y,z") {
+    if (!std::getline(input, line)) {
+        throw std::runtime_error("PCL input CSV is empty");
+    }
+    strip_carriage_return(line);
+    if (line != "sample_id,distance_threshold,x,y,z") {
         throw std::runtime_error("unexpected PCL input CSV header");
     }
 
@@ -63,6 +73,7 @@ std::vector<Sample> read_samples(const std::string& path) {
     std::size_t line_number = 1;
     while (std::getline(input, line)) {
         ++line_number;
+        strip_carriage_return(line);
         if (line.empty()) {
             continue;
         }
