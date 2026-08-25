@@ -1,0 +1,5 @@
+schema_version: 1
+name: paper
+trials: 50
+circles_per_trial: 20
+compare_to_paper_reference: true

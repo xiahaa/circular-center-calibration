@@ -1,0 +1,7 @@
+schema_version: 1
+name: paper
+trials_per_cell: 1000
+point_counts: [8, 12, 20]
+outlier_ratios: [0.0, 0.1, 0.2, 0.3]
+confidences: [0.95, 0.99, 0.999]
+compare_to_paper_reference: true

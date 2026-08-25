@@ -1,0 +1,7 @@
+schema_version: 1
+name: ci
+trials_per_cell: 1
+point_counts: [8, 12]
+outlier_ratios: [0.0, 0.3]
+confidences: [0.95, 0.99]
+compare_to_paper_reference: false

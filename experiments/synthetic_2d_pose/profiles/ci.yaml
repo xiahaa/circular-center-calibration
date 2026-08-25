@@ -1,0 +1,5 @@
+schema_version: 1
+name: ci
+trials: 1
+circles_per_trial: 4
+compare_to_paper_reference: false
