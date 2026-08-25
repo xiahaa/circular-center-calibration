@@ -8,7 +8,7 @@ jobs:
   core:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install C++ dependencies
         run: sudo apt-get update && sudo apt-get install -y libeigen3-dev ninja-build
       - name: Configure C++
@@ -17,14 +17,18 @@ jobs:
         run: cmake --build build && ctest --test-dir build --output-on-failure
       - name: Run C++ example
         run: ./build/cpp/circular_center_fit_circle
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.10"
       - name: Install Python package
-        run: python -m pip install -e '.[vision,dev]'
+        run: python -m pip install -e '.[experiments,dev]'
       - name: Test Python
-        run: python -m pytest -q
+        run: python -m pytest -q && ruff check .
       - name: Run public examples
         run: |
           python examples/minimal_demo.py
           python experiments/basic_experiments.py --trials 3 --output outputs/ci.json
+          python experiments/synthetic/run_experiments.py \
+            --profile smoke --trials 1 --output-directory outputs/synthetic-ci
+          python experiments/synthetic/plot_results.py \
+            outputs/synthetic-ci/summary.json --output outputs/synthetic-ci/summary.png
