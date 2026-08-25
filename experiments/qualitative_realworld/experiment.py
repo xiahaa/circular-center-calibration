@@ -223,6 +223,7 @@ def _measurement_summary(measurement: Measurement) -> Dict[str, Any]:
 def _run_dataset(
     dataset: Dataset,
     context: ExperimentContext,
+    methods: Mapping[str, Any],
     extraction_config: Mapping[str, object],
     detection_config: Mapping[str, object],
     evaluation_config: Mapping[str, object],
@@ -238,7 +239,7 @@ def _run_dataset(
                 _measure_frame(
                     pair,
                     dataset,
-                    context.methods,
+                    methods,
                     extraction_config,
                     detection_config,
                 )
@@ -257,7 +258,7 @@ def _run_dataset(
     pose_failure = None
     if len(measurements) >= 4:
         try:
-            pose = _solve_pose(measurements, dataset, context.methods["ambiguity"])
+            pose = _solve_pose(measurements, dataset, methods["ambiguity"])
         except Exception as error:
             pose_failure = {
                 "error_type": type(error).__name__,
@@ -267,8 +268,8 @@ def _run_dataset(
     frame_summaries = []
     output_directory = context.output_directory / dataset.name
     method_names = {
-        "2d": context.methods["2d"].name,
-        "3d": context.methods["3d"].name,
+        "2d": methods["2d"].name,
+        "3d": methods["3d"].name,
     }
     for index, measurement in enumerate(measurements):
         image = cv2.imread(str(measurement.pair.image_path), cv2.IMREAD_COLOR)
@@ -327,6 +328,11 @@ def _run_dataset(
 
 def run(context: ExperimentContext) -> Dict[str, Any]:
     directory = context.experiment_directory
+    methods = {
+        "2d": context.require_single_method("2d"),
+        "3d": context.require_single_method("3d"),
+        "ambiguity": context.optional_single_method("ambiguity"),
+    }
     extraction_config = _load_config(directory / "extraction3d" / "config.yaml")
     detection_config = _load_config(directory / "detection2d" / "config.yaml")
     evaluation_config = _load_config(directory / "evaluation" / "config.yaml")
@@ -334,6 +340,7 @@ def run(context: ExperimentContext) -> Dict[str, Any]:
         _run_dataset(
             load_dataset(context.repository_root / "data", name),
             context,
+            methods,
             extraction_config,
             detection_config,
             evaluation_config,
@@ -344,12 +351,12 @@ def run(context: ExperimentContext) -> Dict[str, Any]:
         "schema_version": 1,
         "experiment": context.selection.name,
         "methods": {
-            "2d": context.methods["2d"].name,
-            "3d": context.methods["3d"].name,
+            "2d": methods["2d"].name,
+            "3d": methods["3d"].name,
             "ambiguity": (
                 None
-                if context.methods["ambiguity"] is None
-                else context.methods["ambiguity"].name
+                if methods["ambiguity"] is None
+                else methods["ambiguity"].name
             ),
         },
         "datasets": datasets,

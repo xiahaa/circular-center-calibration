@@ -18,6 +18,8 @@ from circular_center.experiments.config import (  # noqa: E402
     ExperimentConfigurationError,
     load_experiment_selection,
 )
+from circular_center.experiments.runner import _instantiate_methods  # noqa: E402
+from circular_center.registry import MethodCatalog  # noqa: E402
 from experiments.qualitative_realworld.data_io import read_pcd  # noqa: E402
 from experiments.qualitative_realworld.detection2d import (  # noqa: E402
     detect_target_ellipse,
@@ -37,9 +39,57 @@ class ExperimentSystemTest(unittest.TestCase):
         )
         selection = load_experiment_selection(source)
         self.assertEqual(selection.name, "qualitative_realworld")
-        self.assertEqual(selection.center2d_method, "Refined Center")
-        self.assertEqual(selection.center3d_method, "CGA-RANSAC")
-        self.assertEqual(selection.ambiguity_method, "Quasi-RANSAC")
+        self.assertEqual(selection.center2d_methods, ("Refined Center",))
+        self.assertEqual(selection.center3d_methods, ("CGA-RANSAC",))
+        self.assertEqual(selection.ambiguity_methods, ("Quasi-RANSAC",))
+
+    def test_outer_config_supports_multiple_methods_and_null_stages(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "experiment.yaml"
+            source.write_text(
+                "schema_version: 1\n"
+                "experiment: synthetic_3d_accuracy\n"
+                "datasets: [synthetic]\n"
+                "methods:\n"
+                "  2d: null\n"
+                "  3d: [CGA, CGA-RANSAC, PCL SACMODEL]\n"
+                "  ambiguity: null\n",
+                encoding="utf-8",
+            )
+            selection = load_experiment_selection(source)
+
+        self.assertEqual(selection.center2d_methods, ())
+        self.assertEqual(
+            selection.center3d_methods,
+            ("CGA", "CGA-RANSAC", "PCL SACMODEL"),
+        )
+        self.assertEqual(selection.ambiguity_methods, ())
+        catalog = MethodCatalog.from_directory(
+            REPOSITORY_ROOT / "configs" / "methods"
+        )
+        methods = _instantiate_methods(catalog, selection)
+        self.assertEqual(methods["2d"], ())
+        self.assertEqual(
+            tuple(method.name for method in methods["3d"]),
+            ("CGA", "CGA-RANSAC", "PCL SACMODEL"),
+        )
+        self.assertEqual(methods["ambiguity"], ())
+
+    def test_outer_config_rejects_duplicate_method_names(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "experiment.yaml"
+            source.write_text(
+                "schema_version: 1\n"
+                "experiment: synthetic_3d_accuracy\n"
+                "datasets: [synthetic]\n"
+                "methods:\n"
+                "  2d: null\n"
+                "  3d: [CGA, CGA]\n"
+                "  ambiguity: null\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ExperimentConfigurationError, "must be unique"):
+                load_experiment_selection(source)
 
     def test_outer_config_rejects_experiment_specific_parameters(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

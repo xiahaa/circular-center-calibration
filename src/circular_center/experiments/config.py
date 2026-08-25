@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Optional, Tuple
+from typing import Any, Mapping, Tuple
 
 import yaml
 
@@ -24,10 +24,23 @@ class ExperimentSelection:
 
     name: str
     datasets: Tuple[str, ...]
-    center2d_method: str
-    center3d_method: str
-    ambiguity_method: Optional[str]
+    center2d_methods: Tuple[str, ...]
+    center3d_methods: Tuple[str, ...]
+    ambiguity_methods: Tuple[str, ...]
     source: Path
+
+    def method_names(self, kind: str) -> Tuple[str, ...]:
+        """Return the normalized method-name tuple for one experiment stage."""
+
+        fields = {
+            "2d": self.center2d_methods,
+            "3d": self.center3d_methods,
+            "ambiguity": self.ambiguity_methods,
+        }
+        try:
+            return fields[kind]
+        except KeyError as error:
+            raise ValueError("unknown experiment method kind {!r}".format(kind)) from error
 
 
 def _nonempty_string(value, label: str, source: Path) -> str:
@@ -36,6 +49,25 @@ def _nonempty_string(value, label: str, source: Path) -> str:
             "{}: {} must be a non-empty string".format(source, label)
         )
     return value
+
+
+def _method_names(value: Any, label: str, source: Path) -> Tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return (_nonempty_string(value, label, source),)
+    if not isinstance(value, list) or not value:
+        raise ExperimentConfigurationError(
+            "{}: {} must be null, a method name, or a non-empty list of method names".format(
+                source, label
+            )
+        )
+    names = tuple(
+        _nonempty_string(name, "{} entry".format(label), source) for name in value
+    )
+    if len(set(names)) != len(names):
+        raise ExperimentConfigurationError("{}: {} must be unique".format(source, label))
+    return names
 
 
 def load_experiment_selection(source: Path) -> ExperimentSelection:
@@ -74,15 +106,14 @@ def load_experiment_selection(source: Path) -> ExperimentSelection:
         raise ExperimentConfigurationError(
             "{}: methods must contain exactly {}".format(path, sorted(_METHOD_KEYS))
         )
-    ambiguity = methods["ambiguity"]
-    if ambiguity is not None:
-        ambiguity = _nonempty_string(ambiguity, "methods.ambiguity", path)
     return ExperimentSelection(
         name=experiment,
         datasets=dataset_names,
-        center2d_method=_nonempty_string(methods["2d"], "methods.2d", path),
-        center3d_method=_nonempty_string(methods["3d"], "methods.3d", path),
-        ambiguity_method=ambiguity,
+        center2d_methods=_method_names(methods["2d"], "methods.2d", path),
+        center3d_methods=_method_names(methods["3d"], "methods.3d", path),
+        ambiguity_methods=_method_names(
+            methods["ambiguity"], "methods.ambiguity", path
+        ),
         source=path,
     )
 

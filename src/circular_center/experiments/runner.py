@@ -7,14 +7,16 @@ import importlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
 from circular_center.registry import MethodCatalog
 
-from .config import load_experiment_selection
+from .config import ExperimentSelection, load_experiment_selection
 from .context import ExperimentContext
+
+_METHOD_KINDS = {"2d": "center2d", "3d": "center3d", "ambiguity": "ambiguity"}
 
 
 def _find_repository_root(config_path: Path) -> Path:
@@ -56,6 +58,18 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def _instantiate_methods(
+    catalog: MethodCatalog, selection: ExperimentSelection
+) -> Mapping[str, Tuple[Any, ...]]:
+    return {
+        stage: tuple(
+            catalog.create(name, expected_kind)
+            for name in selection.method_names(stage)
+        )
+        for stage, expected_kind in _METHOD_KINDS.items()
+    }
+
+
 def run_experiment(
     config_path: Path,
     *,
@@ -77,15 +91,7 @@ def run_experiment(
     destination.mkdir(parents=True, exist_ok=True)
 
     catalog = MethodCatalog.from_directory(repository_root / "configs" / "methods")
-    methods = {
-        "2d": catalog.create(selection.center2d_method, "center2d"),
-        "3d": catalog.create(selection.center3d_method, "center3d"),
-        "ambiguity": (
-            None
-            if selection.ambiguity_method is None
-            else catalog.create(selection.ambiguity_method, "ambiguity")
-        ),
-    }
+    methods = _instantiate_methods(catalog, selection)
     context = ExperimentContext(
         selection=selection,
         repository_root=repository_root,
