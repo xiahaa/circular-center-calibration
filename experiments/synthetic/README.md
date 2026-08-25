@@ -31,14 +31,6 @@ generators are derived from the requested seed. The runner writes every trial
 to `raw_results.csv` and grouped mean, median, p95, and success-rate statistics
 to `summary.json`.
 
-## Relationship to the legacy Monte Carlo code
-
-The 3D paper profile now reproduces the effective experiment definitions in
-`CCenterFinder/src/benchmark_circle_fitting_noise.cpp`,
-`CCenterFinder/src/benchmark_outlier.cpp`,
-`CCenterFinder/src/monte_carlo_benchmark.cpp`, and their data generator
-`IROS/workspace/main_carlo_pcl_3d.py`:
-
 | Study | Samples per setting | Geometry and noise |
 | --- | ---: | --- |
 | Noise sweep | 500 | 50 points, radius 2–5 m, center 0–5 m, random 90°–360° arc, sigma 1e-4–1 m |
@@ -47,9 +39,7 @@ The 3D paper profile now reproduces the effective experiment definitions in
 | Four stress scenarios | 1000 | Original isotropic, 70° nonuniform, 12-point sparse, and 200° symmetric generators |
 
 Omit `--trials` to use those per-study counts, or set it to override every
-configuration. The rewrite matches the sampling distributions, thresholds, and
-metrics, but cannot reproduce old samples bit-for-bit: the old generators did
-not set a global seed and used a mixture of NumPy and C++ random-number engines.
+configuration. 
 
 ## Optional PCL baseline
 
