@@ -21,10 +21,34 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install Python package
-        run: python -m pip install -e '.[experiments,dev]'
+        run: python -m pip install -e '.[all]'
       - name: Test Python
         run: python -m pytest -q
       - name: Run public examples
         run: |
           python examples/minimal_demo.py
           python experiments/basic_experiments.py --trials 3 --output outputs/ci.json
+
+  pcl-baseline:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PCL build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libeigen3-dev libpcl-dev ninja-build
+      - name: Configure and test PCL baseline
+        run: |
+          cmake -S . -B build-pcl -G Ninja \
+            -DCCC_BUILD_TESTS=ON \
+            -DCCC_BUILD_EXAMPLES=OFF \
+            -DCCC_BUILD_PCL_BASELINE=ON
+          cmake --build build-pcl
+          ctest --test-dir build-pcl --output-on-failure
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Test Python PCL adapter
+        env:
+          CIRCULAR_CENTER_PCL_LIBRARY: ${{ github.workspace }}/build-pcl/cpp/libcircular_center_pcl_sacmodel.so
+        run: |
+          python -m pip install -e '.[all]'
+          python -m pytest tests/test_method_registry.py -q

@@ -20,14 +20,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-vision = [
-    "opencv-python>=4.5",
-]
-experiments = [
+all = [
     "opencv-python>=4.5",
     "scipy>=1.7",
-]
-dev = [
     "pytest>=7,<9",
     "ruff>=0.4",
 ]

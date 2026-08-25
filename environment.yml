@@ -14,6 +14,7 @@ dependencies:
   - cmake>=3.20
   - ninja
   - eigen>=3.3,<4
+  - pcl>=1.12,<2
   - cxx-compiler
   - pip:
       - -e .

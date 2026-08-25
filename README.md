@@ -5,35 +5,32 @@ LiDAR-camera extrinsic calibration.
 
 ## Installation
 
-The recommended environment includes the Python experiment stack and the C++
-toolchain. From the repository root:
+### Conda: all features (recommended)
 
 ```bash
 conda env create -f environment.yml
 conda activate circular-center-calibration
-python -m pytest -q
-python examples/minimal_demo.py
 ```
 
-`environment.yml` installs this repository in editable mode. To use an existing
-Python environment instead:
+### Pip
+
+From the repository root:
 
 ```bash
-python -m pip install -e '.[experiments,dev]'
-python -m pytest -q
+python -m pip install -e '.[all]'
 ```
 
-The C++ core requires C++17, CMake, Ninja, and Eigen, all of which are included
-in the Conda environment:
+### PCL SACMODEL
+
+The PCL baseline uses C++. After the Conda installation, build it once:
 
 ```bash
-cmake -S . -B build -G Ninja \
-  -DCCC_BUILD_TESTS=ON \
-  -DCCC_BUILD_EXAMPLES=ON
+cmake -S . -B build -G Ninja -DCCC_BUILD_PCL_BASELINE=ON
 cmake --build build
-ctest --test-dir build --output-on-failure
-./build/cpp/circular_center_fit_circle
 ```
+
+Python experiments load the library automatically. Other methods do not need
+this step. Set `CIRCULAR_CENTER_PCL_LIBRARY` only for a custom library path.
 
 ## Run the real-world experiment
 
@@ -74,11 +71,33 @@ Method names match the paper. The current catalog contains:
 | Stage | Available names |
 | --- | --- |
 | 2D | `Ellipse Center`, `Mass Center`, `Refined Center` |
-| 3D | `CGA`, `CGA-RANSAC` |
+| 3D | `CGA`, `CGA-RANSAC`, `PCL SACMODEL` |
 | Ambiguity | `Homography Validation`, `Quasi-RANSAC` |
 
-`PCL SACMODEL` is a paper comparison method, but it is not registered until a
-genuine PCL-backed adapter is present in this repository.
+`PCL SACMODEL` calls PCL's `SACSegmentation` with `SACMODEL_CIRCLE3D` and
+`SAC_RANSAC` through the optional C++ shared library; it is not a Python
+reimplementation.
+
+Each method entry in an outer experiment YAML accepts one name, a list of names,
+or `null`. For example, a 3D-only comparison can select all paper baselines
+without dummy 2D methods:
+
+```yaml
+methods:
+  2d: null
+  3d: ["CGA", "CGA-RANSAC", "PCL SACMODEL"]
+  ambiguity: null
+```
+
+The runner normalizes these values to tuples. Experiment code can iterate over
+all selected methods, or explicitly require exactly one method when its protocol
+does not support comparisons.
+
+A *fast CI configuration* is a deliberately reduced experiment profile, such as
+one seed, one parameter value, and one or two frames. It only verifies that data
+generation, method dispatch, metrics, and output writing remain connected. It
+must not be used as a paper result; the full paper profile retains the published
+trial counts and parameter grid.
 
 To add a method:
 
