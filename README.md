@@ -1,8 +1,3 @@
-# ROS Version
-  <img src="https://www.pilz.com/imagecache/mam/pilz/images/import/01_Products_and_Solutions/A0900_robotics/fittosize__752_0_53ab91fb2e1755765c20d5d1df8d5f9d_l_ros_logo_3c_2018_08_1000x562-mobile-1596543825.jpg" width="50" alt="ROS Logo">
-
-A ROS Noetic integration example is provided [ROS-integration](https://github.com/xiahaa/circular-center-calibration-ros/tree/main).
-
 # Circular Center Estimation
 
 Minimal reference implementation for the paper **Accurate Measurement of 3D and
@@ -35,13 +30,6 @@ undistorted before calling the estimator.
 
 Ubuntu 20.04 or newer is recommended.
 
-## Data
-
-Data is released via [Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing). In our paper, we have also tested the proposed algorithm on the synthetic dataset from [velo2cam](https://github.com/beltransen/velo2cam_calibration), [Fastcalib](https://github.com/hku-mars/FAST-Calib), and [PBACalib](https://github.com/chenfeiyi/PBACalib). Please visit their GitHub repository for more information on their released data. We do not redistribute those data here.
-
-Due to privacy issues, we cannot release the raw rosbag files. Instead, we release the image–point-cloud pairs extracted from the rosbag and mask out human face to preserve the privacy.
-
-
 ### Python
 
 ```bash
@@ -67,6 +55,25 @@ cmake --build build
 cmake --build build --target test
 ./build/cpp/circular_center_fit_circle
 ```
+
+## ROS integration
+
+A ROS 1 Noetic integration is maintained in
+[`xiahaa/circular-center-calibration-ros`](https://github.com/xiahaa/circular-center-calibration-ros).
+
+## Data
+
+The image–point-cloud pairs released with the paper are available on
+[Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing).
+The original rosbag recordings are not redistributed for privacy reasons; human
+faces in the released images have been masked.
+
+Additional calibration experiments use public resources from
+[`velo2cam_calibration`](https://github.com/beltransen/velo2cam_calibration),
+[`FAST-Calib`](https://github.com/hku-mars/FAST-Calib), and
+[`PBACalib`](https://github.com/chenfeiyi/PBACalib). These third-party resources
+are not redistributed here; consult the upstream repositories for their data
+provenance, availability, and license terms.
 
 ## Minimal examples
 
