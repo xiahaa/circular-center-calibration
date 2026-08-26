@@ -3,6 +3,17 @@
 Modular reference implementation for 3D/2D circular-center measurement and
 LiDAR-camera extrinsic calibration.
 
+The refactored real-world experiment includes a deterministic, automatic
+HSV + partial-arc detector. The original data-preparation pipeline used AAMED
+followed by manual selection. AAMED is GPL-2.0 and is therefore kept as an
+optional external dependency rather than bundled into this Apache-2.0
+distribution. Its exact public version and comparison protocol are documented
+in [`docs/dependencies/aamed.md`](docs/dependencies/aamed.md).
+
+For the tracked real-world golden results, use the exact numerical environment
+in `environment-realworld.yml`. It intentionally excludes the optional PCL
+baseline.
+
 ## Installation
 
 ### Conda

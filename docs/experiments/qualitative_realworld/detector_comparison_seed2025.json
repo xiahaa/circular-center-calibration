@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "protocol": {
+    "frames": 67,
+    "successful_3d_frames": 65,
+    "point_cloud_manifest": "orbbec_livox_lab_point_clouds.sha256",
+    "cga_ransac_seed": 2025,
+    "quasi_ransac_seed": 2025,
+    "quasi_ransac_scoring": "msac",
+    "quasi_ransac_iterations": 2000
+  },
+  "detectors": {
+    "hsv_partial_arc": {
+      "distribution": "included under the repository Apache-2.0 license",
+      "raw": {
+        "detected_ellipses": 67,
+        "calibration_correspondences": 65,
+        "calibration_inliers": 62,
+        "mean_reprojection_error_all_px": 2.6028618805154586,
+        "mean_reprojection_error_inliers_px": 2.269661778124449
+      },
+      "privacy_masked": {
+        "detected_ellipses": 67,
+        "calibration_correspondences": 65,
+        "calibration_inliers": 61,
+        "mean_reprojection_error_all_px": 2.633831854649699,
+        "mean_reprojection_error_inliers_px": 2.1949591334519365
+      },
+      "raw_vs_masked_ellipse_center_difference_px": {
+        "median": 0.0,
+        "p95": 0.02139697960959893,
+        "maximum": 0.5788458347266958
+      }
+    },
+    "aamed_v1_external": {
+      "upstream_commit": "7c8345a01eeb5c852585676fbe414703504bff04",
+      "license": "GPL-2.0",
+      "distribution": "not included; ellipse proposals were exported from an external checkout",
+      "selection": "automatic red-board support scoring",
+      "raw": {
+        "detected_ellipses": 67,
+        "calibration_correspondences": 65,
+        "calibration_inliers": 62,
+        "mean_reprojection_error_all_px": 2.6438999418622693,
+        "mean_reprojection_error_inliers_px": 2.3206979268561745
+      },
+      "privacy_masked": {
+        "detected_ellipses": 67,
+        "calibration_correspondences": 65,
+        "calibration_inliers": 62,
+        "mean_reprojection_error_all_px": 2.64176137763521,
+        "mean_reprojection_error_inliers_px": 2.31992136747571
+      },
+      "raw_vs_masked_ellipse_center_difference_px": {
+        "median": 0.0,
+        "p95": 0.01215089411674216,
+        "maximum": 0.06052238984467338
+      }
+    }
+  },
+  "cross_detector_ellipse_center_difference_px": {
+    "raw_median": 0.31798452413174105,
+    "raw_p95": 0.47750093037986924,
+    "raw_maximum": 2.805567569447607,
+    "privacy_masked_median": 0.31798452413174105,
+    "privacy_masked_p95": 0.5043020328464555,
+    "privacy_masked_maximum": 2.805567569447607
+  }
+}

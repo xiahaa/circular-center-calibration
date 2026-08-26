@@ -1,0 +1,7 @@
+schema_version: 1
+experiment: qualitative_realworld
+datasets: [orbbec_livox_office]
+methods:
+  2d: "Refined Center"
+  3d: "CGA-RANSAC"
+  ambiguity: "Quasi-RANSAC"

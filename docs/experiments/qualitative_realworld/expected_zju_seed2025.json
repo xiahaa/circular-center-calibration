@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "data_profile": "zju_cam_back_undistorted_7_v1",
+  "dataset": "zju",
+  "image_manifest": "zju_images.sha256",
+  "point_cloud_manifest": "zju_point_clouds.sha256",
+  "reference_environment": {
+    "platform": "WSL2 Ubuntu 22.04.3 LTS",
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "opencv_python": "4.12.0",
+    "pcl": "not used by this CGA-RANSAC real-world run"
+  },
+  "camera": {
+    "source": "insta360_config.yaml CamBack",
+    "released_image_state": "fisheye_undistorted",
+    "runtime_distortion": [0.0, 0.0, 0.0, 0.0, 0.0]
+  },
+  "image_count": 7,
+  "point_cloud_count": 7,
+  "methods": {
+    "2d": "Refined Center",
+    "3d": "CGA-RANSAC",
+    "ambiguity": "Quasi-RANSAC"
+  },
+  "seeds": {
+    "ellipse_arc_ransac": 2025,
+    "cga_ransac": 2025,
+    "quasi_ransac": 2025
+  },
+  "quasi_ransac_scoring": "msac",
+  "quasi_ransac_iterations": 2000,
+  "attempted_frames": 7,
+  "successful_frames": 7,
+  "failed_frames": 0,
+  "failed_frame_ids": [],
+  "correspondence_count": 7,
+  "inlier_count": 7,
+  "mean_reprojection_error_all_px": 1.9505708506318462,
+  "mean_reprojection_error_inliers_px": 1.9505708506318462
+}

@@ -213,8 +213,14 @@ def render_qualitative_frame(
         metric_line += " | {}".format("inlier" if calibration_inlier else "outlier")
     _draw_label(canvas, [method_line, metric_line], draw)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(destination), canvas):
+    extension = destination.suffix or ".png"
+    success, encoded = cv2.imencode(extension, canvas)
+    if not success:
         raise OSError("failed to write {}".format(destination))
+    try:
+        encoded.tofile(destination)
+    except OSError as error:
+        raise OSError("failed to write {}: {}".format(destination, error)) from error
     return reprojection_error
 
 

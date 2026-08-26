@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "data_profile": "orbbec_livox_lab_privacy_masked_67_v1",
+  "dataset": "orbbec_livox_lab",
+  "image_manifest": "orbbec_livox_lab_privacy_masked_images.sha256",
+  "point_cloud_manifest": "orbbec_livox_lab_point_clouds.sha256",
+  "reference_environment": {
+    "platform": "WSL2 Ubuntu 22.04.3 LTS",
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "opencv_python": "4.12.0",
+    "pcl": "not used by this CGA-RANSAC real-world run"
+  },
+  "image_count": 67,
+  "point_cloud_count": 67,
+  "methods": {
+    "2d": "Refined Center",
+    "3d": "CGA-RANSAC",
+    "ambiguity": "Quasi-RANSAC"
+  },
+  "seeds": {
+    "ellipse_arc_ransac": 2025,
+    "cga_ransac": 2025,
+    "quasi_ransac": 2025
+  },
+  "quasi_ransac_scoring": "msac",
+  "quasi_ransac_iterations": 2000,
+  "attempted_frames": 67,
+  "successful_frames": 65,
+  "failed_frames": 2,
+  "failed_frame_ids": ["00052", "00063"],
+  "correspondence_count": 65,
+  "inlier_count": 61,
+  "mean_reprojection_error_all_px": 2.633831854649699,
+  "mean_reprojection_error_inliers_px": 2.1949591334519365
+}
