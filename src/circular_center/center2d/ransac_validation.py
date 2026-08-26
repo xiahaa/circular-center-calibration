@@ -88,7 +88,15 @@ def _validate_inputs(p3, p2, p2_alt, K):
             QuasiRansacStatus.INVALID_INPUT,
             "quasi-RANSAC inputs must be finite",
         )
-    return p3, p2, p2_alt, intrinsic
+    # A projected circle produces an unordered pair. Canonicalize each pair so
+    # a fixed seed samples the same physical branch even when two ellipse
+    # detectors return the candidates in opposite orders.
+    swap = (p2_alt[:, 0] < p2[:, 0]) | (
+        (p2_alt[:, 0] == p2[:, 0]) & (p2_alt[:, 1] < p2[:, 1])
+    )
+    candidate_a = np.where(swap[:, None], p2_alt, p2)
+    candidate_b = np.where(swap[:, None], p2, p2_alt)
+    return p3, candidate_a, candidate_b, intrinsic
 
 
 def _project(points, rotation, translation, intrinsic):
@@ -147,12 +155,22 @@ def _recover_pose(cv2, points, image_points, intrinsic, *, initial=None):
     return cv2.Rodrigues(rotation_vector)[0], translation
 
 
-def _score_pose(errors, inlier_mask, scoring, sample_size):
+def _score_pose(errors, inlier_mask, scoring, sample_size, inlier_threshold):
     inlier_count = int(np.count_nonzero(inlier_mask))
     if scoring == "mean_error":
         return (-float(np.mean(errors)),)
     if inlier_count < sample_size:
         return None
+    if scoring == "msac":
+        truncated_squared_error = np.minimum(
+            np.asarray(errors, dtype=float) ** 2,
+            float(inlier_threshold) ** 2,
+        )
+        return (
+            -float(np.mean(truncated_squared_error)),
+            inlier_count,
+            -float(np.median(errors[inlier_mask])) if inlier_count else -np.inf,
+        )
     return (
         inlier_count,
         -float(np.median(errors[inlier_mask])),
@@ -190,10 +208,10 @@ def fit_quasi_ransac(
             QuasiRansacStatus.INVALID_INPUT,
             "inlier_threshold must be positive",
         )
-    if scoring not in {"consensus", "mean_error"}:
+    if scoring not in {"consensus", "mean_error", "msac"}:
         raise QuasiRansacError(
             QuasiRansacStatus.INVALID_INPUT,
-            "scoring must be 'consensus' or 'mean_error'",
+            "scoring must be 'consensus', 'mean_error', or 'msac'",
         )
     sample_size = 4
     generator = np.random.default_rng(seed)
@@ -239,7 +257,9 @@ def fit_quasi_ransac(
         errors, selected = _branch_errors(projected, candidate_a, candidate_b)
         inlier_mask = errors <= inlier_threshold
         inlier_count = int(np.count_nonzero(inlier_mask))
-        score = _score_pose(errors, inlier_mask, scoring, sample_size)
+        score = _score_pose(
+            errors, inlier_mask, scoring, sample_size, inlier_threshold
+        )
         if score is None:
             continue
         if best_score is None or score > best_score:
@@ -274,7 +294,9 @@ def fit_quasi_ransac(
         )
     errors, selected = _branch_errors(projected, candidate_a, candidate_b)
     inlier_mask = errors <= inlier_threshold
-    final_score = _score_pose(errors, inlier_mask, scoring, sample_size)
+    final_score = _score_pose(
+        errors, inlier_mask, scoring, sample_size, inlier_threshold
+    )
     final_state = (rotation, translation, selected, inlier_mask, errors)
 
     # Quasi-RANSAC supplies the robust hypothesis. As in the calibration
@@ -302,7 +324,9 @@ def fit_quasi_ransac(
             break
         errors, selected = _branch_errors(projected, candidate_a, candidate_b)
         inlier_mask = errors <= inlier_threshold
-        score = _score_pose(errors, inlier_mask, scoring, sample_size)
+        score = _score_pose(
+            errors, inlier_mask, scoring, sample_size, inlier_threshold
+        )
         if score is not None and (final_score is None or score >= final_score):
             final_score = score
             final_state = (rotation, translation, selected, inlier_mask, errors)

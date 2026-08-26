@@ -230,6 +230,46 @@ class Center2dTest(unittest.TestCase):
         )
         np.testing.assert_array_equal(first.selected_points, expected_selection)
 
+    def test_quasi_ransac_is_invariant_to_per_row_candidate_order(self):
+        rng = np.random.default_rng(17)
+        points3d = rng.normal(size=(30, 3))
+        points3d[:, 2] += 8.0
+        intrinsic = np.array(
+            [[700.0, 0.0, 640.0], [0.0, 700.0, 360.0], [0.0, 0.0, 1.0]]
+        )
+        projected = (intrinsic @ points3d.T).T
+        candidate_a = projected[:, :2] / projected[:, 2, None]
+        candidate_b = candidate_a + np.column_stack(
+            [np.full(len(points3d), 12.0), np.full(len(points3d), -7.0)]
+        )
+        swap = rng.random(len(points3d)) < 0.5
+        shuffled_a = np.where(swap[:, None], candidate_b, candidate_a)
+        shuffled_b = np.where(swap[:, None], candidate_a, candidate_b)
+
+        reference = fit_quasi_ransac(
+            points3d,
+            candidate_a,
+            candidate_b,
+            intrinsic,
+            seed=2025,
+            adaptive=False,
+            max_iterations=200,
+        )
+        shuffled = fit_quasi_ransac(
+            points3d,
+            shuffled_a,
+            shuffled_b,
+            intrinsic,
+            seed=2025,
+            adaptive=False,
+            max_iterations=200,
+        )
+
+        np.testing.assert_allclose(reference.rotation, shuffled.rotation)
+        np.testing.assert_allclose(reference.translation, shuffled.translation)
+        np.testing.assert_allclose(reference.selected_points, shuffled.selected_points)
+        np.testing.assert_array_equal(reference.inlier_mask, shuffled.inlier_mask)
+
 
 if __name__ == "__main__":
     unittest.main()

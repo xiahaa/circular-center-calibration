@@ -146,8 +146,11 @@ def _console_summary(result: Mapping[str, Any]) -> Mapping[str, Any]:
                 "status": calibration["status"],
                 "correspondences": calibration["correspondence_count"],
                 "inliers": calibration["inlier_count"],
-                "mean_reprojection_error_px": calibration[
-                    "mean_reprojection_error_px"
+                "mean_reprojection_error_all_px": calibration[
+                    "mean_reprojection_error_all_px"
+                ],
+                "mean_reprojection_error_inliers_px": calibration[
+                    "mean_reprojection_error_inliers_px"
                 ],
             }
         elif dataset["calibration_failure"] is not None:

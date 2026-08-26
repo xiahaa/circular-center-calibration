@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple
 
+import cv2
 import numpy as np
 import yaml
 
@@ -32,6 +33,20 @@ class Dataset:
 class PointCloud:
     points: np.ndarray
     intensity: np.ndarray
+
+
+def read_image(path: Path) -> np.ndarray:
+    """Read a BGR image without OpenCV's Windows Unicode-path limitation."""
+
+    source = Path(path)
+    try:
+        encoded = np.fromfile(source, dtype=np.uint8)
+    except OSError as error:
+        raise ValueError("cannot read image {}: {}".format(source, error)) from error
+    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("cannot decode image {}".format(source))
+    return image
 
 
 def _load_yaml(source: Path) -> Dict[str, object]:
@@ -95,7 +110,11 @@ _PCD_DTYPES = {
 
 
 def read_pcd(source: Path) -> PointCloud:
-    """Read uncompressed ASCII or binary PCD with scalar x/y/z/intensity fields."""
+    """Read uncompressed ASCII or binary PCD with scalar x/y/z/intensity fields.
+
+    Other fields may be vector-valued. Livox PCD files commonly use repeated
+    anonymous ``_`` fields with COUNT greater than one for alignment padding.
+    """
 
     path = Path(source)
     header: Dict[str, list[str]] = {}
@@ -125,15 +144,33 @@ def read_pcd(source: Path) -> PointCloud:
         counts = [int(value) for value in header.get("COUNT", ["1"] * len(fields))]
         if not (len(fields) == len(sizes) == len(types) == len(counts)):
             raise ValueError("{} has inconsistent field metadata".format(path))
-        if any(count != 1 for count in counts):
-            raise ValueError("{} uses unsupported vector-valued PCD fields".format(path))
         required = {"x", "y", "z", "intensity"}
         if not required.issubset(fields):
             raise ValueError("{} must contain x, y, z, and intensity".format(path))
+        if any(counts[fields.index(field)] != 1 for field in required):
+            raise ValueError("{} uses a vector-valued required field".format(path))
+
+        internal_names = []
+        used_names = set()
+        for index, field in enumerate(fields):
+            internal_name = field
+            if internal_name in used_names:
+                internal_name = "{}_{}".format(field, index)
+            used_names.add(internal_name)
+            internal_names.append(internal_name)
         try:
-            dtype = np.dtype(
-                [(field, _PCD_DTYPES[(field_type, size)]) for field, field_type, size in zip(fields, types, sizes)]
-            )
+            dtype_fields = []
+            for internal_name, field_type, size, count in zip(
+                internal_names, types, sizes, counts
+            ):
+                scalar_dtype = _PCD_DTYPES[(field_type, size)]
+                descriptor = (
+                    (internal_name, scalar_dtype)
+                    if count == 1
+                    else (internal_name, scalar_dtype, (count,))
+                )
+                dtype_fields.append(descriptor)
+            dtype = np.dtype(dtype_fields)
         except KeyError as error:
             raise ValueError("{} uses an unsupported PCD field type".format(path)) from error
         point_count = int(header.get("POINTS", header.get("WIDTH", ["0"]))[0])
@@ -141,21 +178,33 @@ def read_pcd(source: Path) -> PointCloud:
             records = np.fromfile(stream, dtype=dtype, count=point_count)
         elif storage == "ascii":
             values = np.loadtxt(stream, dtype=float, ndmin=2)
-            if values.shape[1] != len(fields):
+            if values.shape[1] != sum(counts):
                 raise ValueError("{} has inconsistent ASCII point rows".format(path))
             records = np.empty(len(values), dtype=dtype)
-            for index, field in enumerate(fields):
-                records[field] = values[:, index]
+            column = 0
+            for internal_name, count in zip(internal_names, counts):
+                if count == 1:
+                    records[internal_name] = values[:, column]
+                else:
+                    records[internal_name] = values[:, column : column + count]
+                column += count
         else:
             raise ValueError("{} uses unsupported DATA {}".format(path, storage))
     if len(records) != point_count:
         raise ValueError(
             "{} declares {} points but contains {}".format(path, point_count, len(records))
         )
-    points = np.column_stack((records["x"], records["y"], records["z"])).astype(
-        float, copy=False
-    )
-    intensity = np.asarray(records["intensity"], dtype=float)
+    required_names = {
+        field: internal_names[fields.index(field)] for field in required
+    }
+    points = np.column_stack(
+        (
+            records[required_names["x"]],
+            records[required_names["y"]],
+            records[required_names["z"]],
+        )
+    ).astype(float, copy=False)
+    intensity = np.asarray(records[required_names["intensity"]], dtype=float)
     valid = (
         np.isfinite(points).all(axis=1)
         & np.isfinite(intensity)
@@ -164,4 +213,11 @@ def read_pcd(source: Path) -> PointCloud:
     return PointCloud(points=points[valid], intensity=intensity[valid])
 
 
-__all__ = ["Dataset", "FramePair", "PointCloud", "load_dataset", "read_pcd"]
+__all__ = [
+    "Dataset",
+    "FramePair",
+    "PointCloud",
+    "load_dataset",
+    "read_image",
+    "read_pcd",
+]

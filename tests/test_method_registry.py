@@ -167,7 +167,7 @@ class MethodRegistryTest(unittest.TestCase):
         self.assertAlmostEqual(result.radius, 0.8, delta=1e-3)
         self.assertEqual(np.count_nonzero(result.inlier_mask), len(points))
 
-    def test_quasi_ransac_wrapper_preserves_legacy_result(self):
+    def test_quasi_ransac_wrapper_matches_core_result(self):
         points = np.array(
             [
                 [-0.8, -0.6, 0.1],
@@ -190,20 +190,23 @@ class MethodRegistryTest(unittest.TestCase):
         inputs = AmbiguousCorrespondences(points, projected, alternative, intrinsic)
         arguments = {"inlier_threshold_px": 2.0, "seed": 2025}
 
-        legacy = fit_quasi_ransac(
+        core = fit_quasi_ransac(
             points,
             projected,
             alternative,
             intrinsic,
             inlier_threshold=2.0,
+            max_iterations=2000,
             seed=2025,
+            adaptive=False,
+            scoring="msac",
         )
         plugin = self.catalog.create(
             "Quasi-RANSAC", "ambiguity", arguments
         ).resolve(inputs)
-        np.testing.assert_array_equal(plugin.rotation, legacy.rotation)
-        np.testing.assert_array_equal(plugin.translation, legacy.translation)
-        np.testing.assert_array_equal(plugin.inlier_mask, legacy.inlier_mask)
+        np.testing.assert_array_equal(plugin.rotation, core.rotation)
+        np.testing.assert_array_equal(plugin.translation, core.translation)
+        np.testing.assert_array_equal(plugin.inlier_mask, core.inlier_mask)
 
     def test_invalid_yaml_is_rejected_with_its_source(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

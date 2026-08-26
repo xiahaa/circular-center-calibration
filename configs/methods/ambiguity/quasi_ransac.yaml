@@ -11,5 +11,8 @@ parameters:
   inlier_threshold_px: 8.0
   max_iterations: 2000
   seed: 2025
-  adaptive: true
-  scoring: consensus
+  # The two projected-center candidates are unordered and often define several
+  # poses with nearly equal consensus counts. A fixed 2,000-hypothesis MSAC run
+  # avoids detector-dependent early stopping on one of those local solutions.
+  adaptive: false
+  scoring: msac
