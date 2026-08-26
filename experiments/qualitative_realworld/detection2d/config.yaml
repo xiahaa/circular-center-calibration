@@ -8,5 +8,29 @@ red_mask:
 ellipse_candidate:
   minimum_board_area_px2: 3000.0
   minimum_hole_area_px2: 300.0
-  hole_to_board_area_ratio: [0.03, 0.60]
+  hole_to_board_area_ratio: [0.10, 0.60]
+  # When several holes share one connected red component, the actual insert is
+  # consistently near this physical circle/board area ratio. The broad hard
+  # range above still permits partially segmented boards with only one hole.
+  preferred_hole_to_board_area_ratio: 0.17
+  area_ratio_score_width: 0.08
   minimum_axis_ratio: 0.35
+  # Privacy rectangles may interrupt both the red component and the white
+  # insert. This deterministic OpenCV fallback fits the remaining edge arcs
+  # inside the convex hull of the largest red component. It runs only when the
+  # normal, topology-based hole detector has no valid candidate.
+  occluded_arc_fallback:
+    enabled: true
+    canny_low: 40
+    canny_high: 120
+    minimum_axis_px: 20.0
+    maximum_axis_px: 260.0
+    minimum_contour_points: 20
+    minimum_red_support: 0.20
+    minimum_insert_support: 0.20
+    minimum_edge_support: 0.10
+    board_hull_erosion_px: 9
+    ransac_iterations: 5000
+    seed: 2025
+    refinement_passes: 4
+    inlier_distance_px: 2.5

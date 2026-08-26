@@ -3,6 +3,12 @@
 Modular reference implementation for 3D/2D circular-center measurement and
 LiDAR-camera extrinsic calibration.
 
+AAMED is GPL-2.0 and is therefore kept as an
+optional external dependency rather than bundled into this Apache-2.0
+distribution. Its exact public version and comparison protocol are documented
+in [`docs/dependencies/aamed.md`](docs/dependencies/aamed.md). Instead, we provide an alternative HSV + partial-arc detector, which works similarly.
+
+
 ## Installation
 
 ### Conda

@@ -16,12 +16,13 @@ curl --fail --location \
   --output data/downloads/circular-center-calibration-data.zip
 ```
 
-解压后，将其中的两个数据集目录放到仓库的 `data/` 下：
+解压后，将三个数据集目录放到仓库的 `data/` 下：
 
 ```bash
 unzip -q data/downloads/circular-center-calibration-data.zip -d data/downloads
 mv data/downloads/circular-center-calibration-data/orbbec_livox_lab data/
 mv data/downloads/circular-center-calibration-data/orbbec_livox_office data/
+mv data/downloads/circular-center-calibration-data/zju data/
 ```
 
 ## 2. 检查数据目录
@@ -35,11 +36,16 @@ data/
 │   ├── camera_info.yaml
 │   ├── img/*.png             # 37 张图像
 │   └── pcd/*.pcd             # 37 份点云
-└── orbbec_livox_lab/
+├── orbbec_livox_lab/
+│   ├── dataset.yaml
+│   ├── camera_info.yaml
+│   ├── img/*.png             # 67 张图像
+│   └── pcd/*.pcd             # 67 份点云
+└── zju/
     ├── dataset.yaml
     ├── camera_info.yaml
-    ├── img/*.png             # 67 张图像
-    └── pcd/*.pcd             # 67 份点云
+    ├── img/*.png             # 7 张图像
+    └── pcd/*.pcd             # 7 份点云
 ```
 
 每对图像和点云使用相同的数字文件名。使用以下命令检查数量：
@@ -49,9 +55,11 @@ find data/orbbec_livox_office/img -name '*.png' -type f | wc -l
 find data/orbbec_livox_office/pcd -name '*.pcd' -type f | wc -l
 find data/orbbec_livox_lab/img -name '*.png' -type f | wc -l
 find data/orbbec_livox_lab/pcd -name '*.pcd' -type f | wc -l
+find data/zju/img -name '*.png' -type f | wc -l
+find data/zju/pcd -name '*.pcd' -type f | wc -l
 ```
 
-四行输出应依次为 `37`、`37`、`67` 和 `67`。
+四行输出应依次为 `37`、`37`、`67`、`67`、`7` 和 `7`。
 
 ## 3. 运行实验
 
@@ -79,6 +87,23 @@ circular-center-run \
 每套数据中，成功提取的全部 `Refined Center` 二维圆心和 `CGA-RANSAC` 三维圆心共同
 参与一次联合标定。`Quasi-RANSAC` 对二维圆心的两个候选结果进行消歧，最终使用全部
 共识内点执行迭代 PnP 优化。
+
+运行可选的 ZJU 7 对验证数据：
+
+```bash
+circular-center-run \
+  configs/experiments/qualitative_realworld/zju.yaml \
+  --output-dir outputs/qualitative_realworld_zju
+```
+
+单独运行 Office 序列：
+
+```bash
+circular-center-run \
+  configs/experiments/qualitative_realworld/office.yaml \
+  --output-dir outputs/qualitative_realworld_office
+```
+
 
 ## 4. 输出文件
 

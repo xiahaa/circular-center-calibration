@@ -24,6 +24,12 @@ from experiments.qualitative_realworld.data_io import read_pcd  # noqa: E402
 from experiments.qualitative_realworld.detection2d import (  # noqa: E402
     detect_target_ellipse,
 )
+from experiments.qualitative_realworld.detection2d.red_board_ellipse import (  # noqa: E402
+    _candidate_score,
+)
+from experiments.qualitative_realworld.experiment import (  # noqa: E402
+    _reprojection_error_statistics,
+)
 from experiments.qualitative_realworld.extraction3d import (  # noqa: E402
     extract_directional_boundary,
     select_target_cluster,
@@ -49,7 +55,16 @@ class ExperimentSystemTest(unittest.TestCase):
         for config_path in config_paths:
             document = yaml.safe_load(config_path.read_text(encoding="utf-8"))
             self.assertEqual(document["experiment"], config_path.parent.name)
-            self.assertIn(config_path.name, {"paper.yaml", "ci.yaml", "default.yaml"})
+            self.assertIn(
+                config_path.name,
+                {
+                    "paper.yaml",
+                    "office.yaml",
+                    "zju.yaml",
+                    "ci.yaml",
+                    "default.yaml",
+                },
+            )
 
     def test_outer_config_stays_small_and_uses_paper_names(self):
         source = (
@@ -186,6 +201,33 @@ class ExperimentSystemTest(unittest.TestCase):
         )
         self.assertGreater(detected.axis_ratio, 0.7)
 
+    def test_realworld_reports_all_and_inlier_reprojection_errors(self):
+        points3d = np.array(
+            [
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+            ]
+        )
+        points2d = points3d[:, :2].copy()
+        points2d[-1, 0] += 8.0
+        statistics = _reprojection_error_statistics(
+            points3d,
+            points2d,
+            np.eye(3),
+            np.eye(3),
+            np.zeros(3),
+            np.array([True, True, True, False]),
+        )
+        self.assertEqual(statistics["mean_reprojection_error_all_px"], 2.0)
+        self.assertEqual(statistics["mean_reprojection_error_inliers_px"], 0.0)
+
+    def test_realworld_board_ratio_rejects_larger_connected_red_hole(self):
+        target = _candidate_score(15602.0, 0.7712, 0.1814, 0.17, 0.08)
+        distractor = _candidate_score(23594.5, 0.7505, 0.2744, 0.17, 0.08)
+        self.assertGreater(target, distractor)
+
     def test_high_reflectance_cluster_boundary_recovers_circle(self):
         generator = np.random.default_rng(2025)
         normal = np.array([0.3, -0.4, 0.8660254])
@@ -251,6 +293,43 @@ class ExperimentSystemTest(unittest.TestCase):
         ).encode("ascii")
         with tempfile.TemporaryDirectory() as temporary_directory:
             source = Path(temporary_directory) / "sample.pcd"
+            source.write_bytes(header + records.tobytes())
+            cloud = read_pcd(source)
+        np.testing.assert_array_equal(cloud.points, [[1, 2, 3], [4, 5, 6]])
+        np.testing.assert_array_equal(cloud.intensity, [255, 180])
+
+    def test_binary_pcd_reader_skips_livox_vector_padding(self):
+        dtype = np.dtype(
+            [
+                ("x", "<f4"),
+                ("y", "<f4"),
+                ("z", "<f4"),
+                ("padding0", "u1", (4,)),
+                ("intensity", "<f4"),
+                ("padding1", "u1", (4,)),
+                ("timestamp", "<f8"),
+                ("ring", "<u2"),
+                ("padding2", "u1", (14,)),
+            ]
+        )
+        records = np.zeros(2, dtype=dtype)
+        records["x"] = [1.0, 4.0]
+        records["y"] = [2.0, 5.0]
+        records["z"] = [3.0, 6.0]
+        records["intensity"] = [255.0, 180.0]
+        header = (
+            "VERSION 0.7\n"
+            "FIELDS x y z _ intensity _ timestamp ring _\n"
+            "SIZE 4 4 4 1 4 1 8 2 1\n"
+            "TYPE F F F U F U F U U\n"
+            "COUNT 1 1 1 4 1 4 1 1 14\n"
+            "WIDTH 2\n"
+            "HEIGHT 1\n"
+            "POINTS 2\n"
+            "DATA binary\n"
+        ).encode("ascii")
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "livox.pcd"
             source.write_bytes(header + records.tobytes())
             cloud = read_pcd(source)
         np.testing.assert_array_equal(cloud.points, [[1, 2, 3], [4, 5, 6]])

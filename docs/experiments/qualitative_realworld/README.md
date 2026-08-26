@@ -18,12 +18,13 @@ curl --fail --location \
   --output data/downloads/circular-center-calibration-data.zip
 ```
 
-Extract the archive and move its two dataset directories under `data/`:
+Extract the archive and move its three dataset directories under `data/`:
 
 ```bash
 unzip -q data/downloads/circular-center-calibration-data.zip -d data/downloads
 mv data/downloads/circular-center-calibration-data/orbbec_livox_lab data/
 mv data/downloads/circular-center-calibration-data/orbbec_livox_office data/
+mv data/downloads/circular-center-calibration-data/zju data/
 ```
 
 ## 2. Check the data layout
@@ -37,11 +38,16 @@ data/
 │   ├── camera_info.yaml
 │   ├── img/*.png             # 37 images
 │   └── pcd/*.pcd             # 37 point clouds
-└── orbbec_livox_lab/
+├── orbbec_livox_lab/
+│   ├── dataset.yaml
+│   ├── camera_info.yaml
+│   ├── img/*.png             # 67 images
+│   └── pcd/*.pcd             # 67 point clouds
+└── zju/
     ├── dataset.yaml
     ├── camera_info.yaml
-    ├── img/*.png             # 67 images
-    └── pcd/*.pcd             # 67 point clouds
+    ├── img/*.png             # 7 images
+    └── pcd/*.pcd             # 7 point clouds
 ```
 
 Each image and point cloud pair has the same numeric filename. Confirm the pair
@@ -52,9 +58,11 @@ find data/orbbec_livox_office/img -name '*.png' -type f | wc -l
 find data/orbbec_livox_office/pcd -name '*.pcd' -type f | wc -l
 find data/orbbec_livox_lab/img -name '*.png' -type f | wc -l
 find data/orbbec_livox_lab/pcd -name '*.pcd' -type f | wc -l
+find data/zju/img -name '*.png' -type f | wc -l
+find data/zju/pcd -name '*.pcd' -type f | wc -l
 ```
 
-The expected output is `37`, `37`, `67`, and `67`.
+The expected output is `37`, `37`, `67`, `67`, `7`, and `7`.
 
 ## 3. Run the experiment
 
@@ -75,10 +83,20 @@ circular-center-run \
   configs/experiments/qualitative_realworld/default.yaml \
   --output-dir outputs/qualitative_realworld
 ```
-
 The default configuration selects `Refined Center`, `CGA-RANSAC`, and
 `Quasi-RANSAC`. Change the selected methods or datasets in
 `configs/experiments/qualitative_realworld/default.yaml`.
+
+
+Run the optional seven-pair ZJU validation with:
+
+```bash
+circular-center-run \
+  configs/experiments/qualitative_realworld/zju.yaml \
+  --output-dir outputs/qualitative_realworld_zju
+```
+
+
 
 For each dataset, all successfully extracted `Refined Center` 2D observations
 and `CGA-RANSAC` 3D centers enter one joint calibration. `Quasi-RANSAC` resolves

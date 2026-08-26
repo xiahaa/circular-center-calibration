@@ -37,3 +37,7 @@ paper/
 project-page/
 reference/
 tmp/
+
+# Optional external GPL detector checkout (not part of this distribution)
+third_party/AAMED/
+third_party/AAMED-patches/

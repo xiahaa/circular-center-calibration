@@ -14,7 +14,7 @@ import yaml
 from circular_center.experiments import ExperimentContext
 from circular_center.interfaces import AmbiguousCorrespondences, EllipseObservation
 
-from .data_io import Dataset, FramePair, load_dataset, read_pcd
+from .data_io import Dataset, FramePair, load_dataset, read_image, read_pcd
 from .detection2d import DetectedTarget, detect_target_ellipse
 from .evaluation import render_qualitative_frame
 from .extraction3d import (
@@ -56,9 +56,7 @@ def _measure_frame(
     detection_config: Mapping[str, object],
 ) -> Measurement:
     started = perf_counter()
-    image = cv2.imread(str(pair.image_path), cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError("cannot read image {}".format(pair.image_path))
+    image = read_image(pair.image_path)
     detection = detect_target_ellipse(
         image,
         dataset.intrinsic,
@@ -133,11 +131,36 @@ def _candidate_arrays(measurements: List[Measurement]) -> tuple[np.ndarray, np.n
     return np.asarray(first), np.asarray(second)
 
 
+def _reprojection_error_statistics(
+    points3d: np.ndarray,
+    points2d: np.ndarray,
+    intrinsic: np.ndarray,
+    rotation: np.ndarray,
+    translation: np.ndarray,
+    inlier_mask: np.ndarray,
+) -> Dict[str, float]:
+    camera = (
+        np.asarray(rotation, dtype=float) @ np.asarray(points3d, dtype=float).T
+    ).T + np.asarray(translation, dtype=float).reshape(1, 3)
+    homogeneous = (np.asarray(intrinsic, dtype=float) @ camera.T).T
+    projected = homogeneous[:, :2] / homogeneous[:, 2, None]
+    errors = np.linalg.norm(projected - np.asarray(points2d, dtype=float), axis=1)
+    mask = np.asarray(inlier_mask, dtype=bool).reshape(-1)
+    if mask.shape != (len(errors),) or not np.any(mask):
+        raise ValueError("pose must contain at least one calibration inlier")
+    return {
+        "mean_reprojection_error_all_px": float(np.mean(errors)),
+        "mean_reprojection_error_inliers_px": float(np.mean(errors[mask])),
+    }
+
+
 def _solve_primary_pose(
     points3d: np.ndarray,
     points2d: np.ndarray,
     intrinsic: np.ndarray,
+    seed: int = 2025,
 ) -> Dict[str, Any]:
+    cv2.setRNGSeed(int(seed) & 0x7FFFFFFF)
     success, rotation_vector, translation, inliers = cv2.solvePnPRansac(
         points3d,
         points2d,
@@ -151,19 +174,28 @@ def _solve_primary_pose(
     if not success:
         raise RuntimeError("PnP-RANSAC failed for primary 2D centers")
     rotation = cv2.Rodrigues(rotation_vector)[0]
-    camera = (rotation @ points3d.T).T + translation.reshape(1, 3)
-    homogeneous = (intrinsic @ camera.T).T
-    projected = homogeneous[:, :2] / homogeneous[:, 2, None]
-    errors = np.linalg.norm(projected - points2d, axis=1)
     inlier_mask = np.zeros(len(points3d), dtype=bool)
     if inliers is not None:
         inlier_mask[np.asarray(inliers).reshape(-1)] = True
+    error_statistics = _reprojection_error_statistics(
+        points3d,
+        points2d,
+        intrinsic,
+        rotation,
+        translation,
+        inlier_mask,
+    )
     return {
         "rotation": rotation,
         "translation": translation.reshape(3),
         "selected_points": points2d,
         "inlier_mask": inlier_mask,
-        "mean_reprojection_error_px": float(np.mean(errors[inlier_mask])),
+        # Backwards-compatible alias. This metric has always been evaluated on
+        # the final calibration inliers, but the old name did not say so.
+        "mean_reprojection_error_px": error_statistics[
+            "mean_reprojection_error_inliers_px"
+        ],
+        **error_statistics,
         "iterations": None,
         "status": "success",
     }
@@ -187,12 +219,23 @@ def _solve_pose(
     result = ambiguity_method.resolve(
         AmbiguousCorrespondences(points3d, candidate_a, candidate_b, dataset.intrinsic)
     )
+    error_statistics = _reprojection_error_statistics(
+        points3d,
+        result.selected_points,
+        dataset.intrinsic,
+        result.rotation,
+        result.translation,
+        result.inlier_mask,
+    )
     return {
         "rotation": result.rotation,
         "translation": result.translation.reshape(3),
         "selected_points": result.selected_points,
         "inlier_mask": result.inlier_mask,
-        "mean_reprojection_error_px": result.mean_reprojection_error,
+        "mean_reprojection_error_px": error_statistics[
+            "mean_reprojection_error_inliers_px"
+        ],
+        **error_statistics,
         "iterations": result.iterations,
         "status": result.status.value,
         "confidence": result.confidence,
@@ -211,6 +254,7 @@ def _measurement_summary(measurement: Measurement) -> Dict[str, Any]:
         "circle_inlier_rmse_m": measurement.center3d.inlier_rmse,
         "center2d_candidates_px": measurement.center2d.candidates,
         "center2d_scores": measurement.center2d.scores,
+        "ellipse_proposal_source": measurement.detection.proposal_source,
         "reflective_points": measurement.reflective_count,
         "cluster_points": len(measurement.cluster_points),
         "boundary_points": measurement.boundary_count,
@@ -275,7 +319,7 @@ def _run_dataset(
         ),
     }
     for index, measurement in enumerate(measurements):
-        image = cv2.imread(str(measurement.pair.image_path), cv2.IMREAD_COLOR)
+        image = read_image(measurement.pair.image_path)
         cloud = read_pcd(measurement.pair.point_cloud_path)
         selected = (
             measurement.center2d.primary
