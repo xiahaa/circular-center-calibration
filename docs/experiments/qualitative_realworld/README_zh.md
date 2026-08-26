@@ -46,7 +46,6 @@ data/
 └── zju/
     ├── dataset.yaml
     ├── camera_info.yaml
-    ├── insta360_config.yaml
     ├── img/*.png             # 7 张图像
     └── pcd/*.pcd             # 7 份点云
 ```
@@ -73,8 +72,8 @@ python tools/verify_realworld_data.py \
 原图审计副本，不代表需要公开的数据。
 
 ZJU 图像是历史 `src/undistort.py` 输出的、已经去畸变的 `CamBack` 帧。规范化后的
-`camera_info.yaml` 因此使用 CamBack 内参和零畸变；如果再次应用
-`insta360_config.yaml` 中的鱼眼畸变参数，会造成二次去畸变。
+`camera_info.yaml` 因此使用 CamBack 内参和零畸变，它已经是完整的运行时相机描述，
+不需要再发布原始鱼眼配置。
 
 ```bash
 python tools/verify_realworld_data.py \

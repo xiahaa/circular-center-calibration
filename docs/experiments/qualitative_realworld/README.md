@@ -48,7 +48,6 @@ data/
 └── zju/
     ├── dataset.yaml
     ├── camera_info.yaml
-    ├── insta360_config.yaml
     ├── img/*.png             # 7 images
     └── pcd/*.pcd             # 7 point clouds
 ```
@@ -78,8 +77,8 @@ author-side audit copy and must not be interpreted as public data.
 
 The ZJU images are already-undistorted `CamBack` frames produced by the
 historical `src/undistort.py`. Its normalized `camera_info.yaml` deliberately
-uses the CamBack intrinsic matrix with zero distortion; applying the fisheye
-coefficients in `insta360_config.yaml` again would undistort the images twice.
+uses the CamBack intrinsic matrix with zero distortion and is the complete
+runtime camera description. No source fisheye configuration is required.
 
 ```bash
 python tools/verify_realworld_data.py \

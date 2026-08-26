@@ -12,7 +12,7 @@
     "pcl": "not used by this CGA-RANSAC real-world run"
   },
   "camera": {
-    "source": "insta360_config.yaml CamBack",
+    "source": "camera_info.yaml (normalized CamBack intrinsics)",
     "released_image_state": "fisheye_undistorted",
     "runtime_distortion": [0.0, 0.0, 0.0, 0.0, 0.0]
   },
