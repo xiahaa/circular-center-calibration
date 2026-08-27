@@ -8,8 +8,8 @@
 </p>
 
 <h2>
-  On Accurate and Robust Estimation of 3D and 2D Circular Center:<br>
-  Method and Application to Camera-Lidar Calibration
+  Accurate Measurement of 3D and 2D Circular Centers With<br>
+  Application to LiDAR-Camera Extrinsic Calibration
 </h2>
 
 <p>
