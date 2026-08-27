@@ -7,11 +7,22 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-D22128?style=flat-square&amp;logo=apache&amp;logoColor=white" alt="Apache-2.0 License"></a>
 </p>
 
-# On Accurate and Robust Estimation of 3D and 2D Circular Center: Method and Application to Camera-Lidar Calibration
+<h2>
+  On Accurate and Robust Estimation of 3D and 2D Circular Center:<br>
+  Method and Application to Camera-Lidar Calibration
+</h2>
+
+<p>
+  <a href="https://github.com/Eku127">Jiajun Jiang</a>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:hux062303@gmail.com">Xiao Hu</a><sup>*</sup>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:wancheng.liu@horizon-continental.com">Wancheng Liu</a>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:weijiang@bjtu.edu.cn">Wei Jiang</a>
+</p>
 
 ### IEEE Transactions on Instrumentation and Measurement (TIM), 2026
-
-**Official implementation for robust 3D/2D circular-center measurement and accurate LiDAR-camera extrinsic calibration.**
 
 </div>
 
