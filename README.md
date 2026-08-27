@@ -1,7 +1,41 @@
+<div align="center">
+
 # Circular Center Calibration
 
-Modular reference implementation for 3D/2D circular-center measurement and
-LiDAR-camera extrinsic calibration.
+<h3>
+  On Accurate and Robust Estimation of 3D and 2D Circular Center:<br>
+  Method and Application to Camera-Lidar Calibration
+</h3>
+
+**Official implementation for robust 3D/2D circular-center measurement and accurate LiDAR-camera extrinsic calibration.**
+
+<p>
+  <a href="mailto:jjiang127@connect.hkust-gz.edu.cn">Jiajun Jiang</a><sup>1</sup>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:hux062303@gmail.com">Xiao Hu</a><sup>2,*</sup>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:wancheng.liu@horizon-continental.com">Wancheng Liu</a><sup>3</sup>
+  &nbsp;&middot;&nbsp;
+  <a href="mailto:weijiang@bjtu.edu.cn">Wei Jiang</a><sup>4</sup>
+</p>
+
+<p>
+  <sup>1</sup> HKUST (Guangzhou) &nbsp;&middot;&nbsp;
+  <sup>2</sup> Astrall Dynamics Technology &nbsp;&middot;&nbsp;
+  <sup>3</sup> Horizon-Continental Technology Corporation &nbsp;&middot;&nbsp;
+  <sup>4</sup> Beijing Jiaotong University
+  <br>
+  <sup>*</sup> Corresponding author
+</p>
+
+<p>
+  <a href="https://eku127.github.io/circular-center-calibration/"><img src="https://img.shields.io/badge/Project-Page-2563EB?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Project Page"></a>
+  <a href="https://arxiv.org/abs/2511.06611"><img src="https://img.shields.io/badge/arXiv-2511.06611-B31B1B?style=flat-square&amp;logo=arxiv&amp;logoColor=white" alt="arXiv"></a>
+  <a href="https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link"><img src="https://img.shields.io/badge/Dataset-Google_Drive-0F9D58?style=flat-square&amp;logo=googledrive&amp;logoColor=white" alt="Dataset"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-D22128?style=flat-square&amp;logo=apache&amp;logoColor=white" alt="Apache-2.0 License"></a>
+</p>
+
+</div>
 
 ![Overview of the 3D and 2D circular-center estimation and LiDAR-camera calibration pipeline](docs/assets/teaser.png)
 
