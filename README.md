@@ -95,6 +95,11 @@ a centered 35 cm circle, so the square and circle share the same center.
 
 ![Calibration target specifications for the high-reflective and hollow circular markers](docs/assets/calibration-target-details.png)
 
+## ROS integration
+
+A ROS 1 Noetic integration is maintained in
+[`xiahaa/circular-center-calibration-ros`](https://github.com/xiahaa/circular-center-calibration-ros).
+
 
 ## License
 
