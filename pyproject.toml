@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "circular-center-calibration"
-version = "0.1.0"
+version = "0.2.0"
 description = "Modular 3D and 2D circular-center estimation and calibration experiments"
 readme = "README.md"
 license = {file = "LICENSE"}
