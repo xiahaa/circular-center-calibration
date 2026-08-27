@@ -1,139 +1,82 @@
-# Circular Center Estimation
+# Circular Center Calibration
 
-Minimal reference implementation for the paper **Accurate Measurement of 3D and
-2D Circular Centers With Application to LiDAR-Camera Extrinsic Calibration**.
+Modular reference implementation for 3D/2D circular-center measurement and
+LiDAR-camera extrinsic calibration.
 
-The repository contains only the reusable contributions:
+![Overview of the 3D and 2D circular-center estimation and LiDAR-camera calibration pipeline](docs/assets/teaser.png)
 
-- normalized conformal-geometric-algebra (CGA) fitting of a 3D circle;
-- deterministic CGA-RANSAC for noisy and outlier-contaminated 3D points;
-- perspective-aware recovery of the two possible image projections of a
-  physical circular center;
-- homography-based or quasi-RANSAC disambiguation of the two 2D candidates.
-
-## Repository layout
-
-```text
-cpp/                  Header-only C++ implementation of normalized 3D CGA fitting
-python/src/           Python package for 3D and 2D circular-center estimation
-examples/             Small, readable examples of the public APIs
-experiments/          Basic validation and synthetic experiment tools
-python/tests/         Numerical and API regression tests
-```
-
-All 3D coordinates are metric. Image coordinates are pixels. The 2D estimator
-accepts only a rectified contour or ellipse together with the corresponding
-rectified intrinsic matrix. Raw distorted contours are not conics and must be
-undistorted before calling the estimator.
+<p align="center"><em>Accurate 3D and 2D circular-center estimation for camera&ndash;LiDAR extrinsic calibration.</em></p>
 
 ## Installation
 
-Ubuntu 20.04 or newer is recommended.
-
-### Python
+### Conda
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[vision,dev]'
-python -m pytest -q
+conda env create -f environment.yml
+conda activate circular-center-calibration
 ```
 
-NumPy is sufficient for the 3D core. OpenCV is installed by the `vision` extra
-and is required for contour rectification, ellipse fitting, and quasi-RANSAC.
 
-### C++
+### Pip
 
-The C++ core requires C++17, CMake 3.16+, and Eigen 3.3+.
+From the repository root:
 
 ```bash
-cmake -S . -B build -G Ninja \
-  -DCCC_BUILD_TESTS=ON \
-  -DCCC_BUILD_EXAMPLES=ON
+python -m pip install -e '.[all]'
+```
+
+### AAMED
+
+Initialize the official AAMED submodule and build its Python extension:
+
+```bash
+git submodule update --init --recursive thirdparty/AAMED
+python tools/build_aamed.py
+```
+
+### PCL SACMODEL
+
+The PCL baseline uses C++. After the Conda installation, build it once:
+
+```bash
+cmake -S . -B build -G Ninja -DCCC_BUILD_PCL_BASELINE=ON
 cmake --build build
-cmake --build build --target test
-./build/cpp/circular_center_fit_circle
 ```
 
-### Optional PCL benchmark
+Python experiments load the library automatically. Other methods do not need
+this step. Set `CIRCULAR_CENTER_PCL_LIBRARY` only for a custom library path.
 
-PCL is required only for the synthetic 3D baseline, not for the core library.
-On Ubuntu, install and build it with:
 
-```bash
-sudo apt-get update
-sudo apt-get install -y libeigen3-dev libpcl-dev ninja-build
-cmake -S . -B build-pcl -G Ninja \
-  -DCCC_BUILD_PCL_EXPERIMENTS=ON \
-  -DCCC_BUILD_TESTS=OFF \
-  -DCCC_BUILD_EXAMPLES=OFF
-cmake --build build-pcl --target circular_center_pcl_batch
-```
+## Experiments
 
-The complete PCL run command and legacy Monte Carlo correspondence are
-documented in [`experiments/synthetic/README.md`](experiments/synthetic/README.md).
+| Experiment | Documentation | Paper correspondence |
+| --- | --- | --- |
+| Synthetic 3D circle-center accuracy | [Docs](docs/experiments/synthetic_3d_accuracy/README.md) | Direct Circular-Center Measurement / 3D Circle Center Measurement — Figure 5 and Table I |
+| Synthetic 3D angular-support stress test | [Docs](docs/experiments/synthetic_3d_stress/README.md) | Direct Circular-Center Measurement / 3D Circle Center Measurement — Figure 6 |
+| Synthetic 3D target tolerance | [Docs](docs/experiments/synthetic_3d_target_tolerance/README.md) | Direct Circular-Center Measurement / 3D Circle Center Measurement — Figure 7 |
+| Synthetic 2D projected-center accuracy | [Docs](docs/experiments/synthetic_2d_accuracy/README.md) | Direct Circular-Center Measurement / 2D Projected-Center Measurement — Figure 8 |
+| Synthetic 2D pose estimation | [Docs](docs/experiments/synthetic_2d_pose/README.md) | Direct Circular-Center Measurement / 2D Projected-Center Measurement — Figure 9 |
+| Quasi-RANSAC evaluation | [Docs](docs/experiments/quasi_ransac_evaluation/README.md) | Direct Circular-Center Measurement / Quasi-RANSAC Evaluation — Table II |
+| 3D runtime benchmark | [Docs](docs/experiments/benchmark_3d_runtime/README.md) | Implementation and Computational Cost — Table III |
+| Qualitative real-world calibration | [Docs](docs/experiments/qualitative_realworld/README.md) | Real-World Calibration — Figure 11 |
 
-## ROS integration
+See the [experiment implementation index](experiments/README.md) for code
+ownership and technical protocols.
 
-A ROS 1 Noetic integration is maintained in
-[`xiahaa/circular-center-calibration-ros`](https://github.com/xiahaa/circular-center-calibration-ros).
 
-## Data
+## Calibration Board
 
-The image–point-cloud pairs released with the paper are available on
-[Google Drive](https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=sharing).
-The original rosbag recordings are not redistributed for privacy reasons; human
-faces in the released images have been masked.
+The experiments use two target variants: a high-reflective circular marker and
+a hollow circular marker. Both designs use a 50 cm by 50 cm square backing with
+a centered 35 cm circle, so the square and circle share the same center.
 
-Additional calibration experiments use public resources from
-[`velo2cam_calibration`](https://github.com/beltransen/velo2cam_calibration),
-[`FAST-Calib`](https://github.com/hku-mars/FAST-Calib), and
-[`PBACalib`](https://github.com/chenfeiyi/PBACalib). These third-party resources
-are not redistributed here; consult the upstream repositories for their data
-provenance, availability, and license terms.
+![Calibration target specifications for the high-reflective and hollow circular markers](docs/assets/calibration-target-details.png)
 
-## Minimal examples
-
-Run both the robust 3D fit and the perspective-aware 2D candidate estimator:
-
-```bash
-python examples/minimal_demo.py
-```
-
-Run a small deterministic Monte Carlo validation and write a JSON summary:
-
-```bash
-python experiments/basic_experiments.py \
-  --trials 100 \
-  --seed 2025 \
-  --output outputs/basic_results.json
-```
-
-The basic experiment compares direct CGA with CGA-RANSAC under outliers,
-compares the fitted ellipse center with the proposed 2D candidate set, and
-checks quasi-RANSAC pose recovery.
-
-## Python API
-
-```python
-from circular_center.center3d import fit_cga_circle, fit_circle_ransac
-from circular_center.center2d import (
-    fit_quasi_ransac,
-    get_ellipse_polynomial_coeff,
-    refine_projected_center,
-    select_projected_center_by_homography,
-)
-```
-
-`fit_cga_circle` and `fit_circle_ransac` return `CircleFitResult`, including the
-center, radius, unoriented normal, residuals, inliers, status, condition number,
-iteration count, and elapsed time. `refine_projected_center` returns both 2D
-candidates because one projected ellipse is geometrically ambiguous.
 
 ## License
 
-The code in this public branch is licensed under Apache-2.0. No GPL code,
-AAMED source, dataset, or vendored third-party implementation is included. See
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for separately installed
-dependencies.
+The top-level project is licensed under Apache-2.0. The separately maintained
+`thirdparty/AAMED` Git submodule is licensed under GPL-2.0 and is not covered
+by the top-level Apache-2.0 license. See
+[`NOTICE`](NOTICE) and
+[`thirdparty/AAMED/LICENSE`](thirdparty/AAMED/LICENSE).

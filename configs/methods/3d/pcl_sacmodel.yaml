@@ -1,0 +1,14 @@
+schema_version: 1
+name: "PCL SACMODEL"
+kind: center3d
+description: "PCL SACSegmentation baseline using SACMODEL_CIRCLE3D and SAC_RANSAC."
+implementation:
+  module: circular_center.methods.center3d.pcl_sacmodel
+  class: PCLSACMODEL
+parameters:
+  residual_threshold_m: 0.015
+  max_iterations: 500
+  confidence: 0.99
+  minimum_radius_m: 0.0
+  maximum_radius_m: null
+  library_path: null

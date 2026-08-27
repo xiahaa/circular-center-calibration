@@ -3,3 +3,17 @@ Copyright 2026 Jiajun Jiang, Xiao Hu, Wancheng Liu, and Wei Jiang
 
 This product includes original software developed by the authors and licensed
 under the Apache License, Version 2.0.
+
+Third-party components retain their own copyright and license terms; the
+top-level Apache License does not relicense those components:
+
+- Eigen is used by the header-only C++ implementation.
+- NumPy is used by the Python implementation.
+- OpenCV is optionally used for ellipse fitting, contour rectification, PnP,
+  and Quasi-RANSAC.
+- PCL is optionally used by the PCL SACMODEL comparison baseline.
+- AAMED is included as the thirdparty/AAMED Git submodule at commit
+  8a7b0c15320f7ce47fa2dc159bc793c89e4b1f90 and is used for arc-based ellipse
+  detection in the qualitative real-world experiment. The submodule and
+  binaries built from it are governed by GPL-2.0; see
+  thirdparty/AAMED/LICENSE.

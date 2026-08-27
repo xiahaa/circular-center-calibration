@@ -1,0 +1,7 @@
+schema_version: 1
+name: paper
+trials_per_cell: 300
+point_counts: [5, 8, 16, 32, 64, 128]
+arc_degrees: [45, 60, 90, 120, 180, 270, 360]
+distributions: [full_circle_uniform, single_arc, dual_opposite_arcs, hdl64_type_bands]
+compare_to_paper_reference: true

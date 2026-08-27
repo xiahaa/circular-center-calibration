@@ -1,0 +1,8 @@
+schema_version: 1
+name: "Mass Center"
+kind: center2d
+description: "Filled-contour mass-center baseline reported in the paper."
+implementation:
+  module: circular_center.methods.center2d.mass_center
+  class: MassCenter
+parameters: {}

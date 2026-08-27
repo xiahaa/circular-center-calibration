@@ -1,0 +1,10 @@
+schema_version: 1
+name: "Homography Validation"
+kind: ambiguity
+description: "Per-observation candidate validation through circle-plane homography."
+implementation:
+  module: circular_center.methods.ambiguity.homography_validation
+  class: HomographyValidation
+parameters:
+  nominal_radius_ratio: 1.0
+  clamp_degenerate_homography: false

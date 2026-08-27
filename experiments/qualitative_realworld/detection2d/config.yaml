@@ -1,0 +1,32 @@
+backend: aamed
+red_mask:
+  low_hue_max: 12
+  high_hue_min: 168
+  minimum_saturation: 80
+  minimum_value: 50
+  close_kernel_px: 9
+  close_iterations: 2
+ellipse_candidate:
+  minimum_board_area_px2: 3000.0
+  minimum_hole_area_px2: 300.0
+  hole_to_board_area_ratio: [0.03, 0.60]
+  minimum_axis_ratio: 0.35
+aamed:
+  module: pyAAMED
+  module_search_paths: [thirdparty/AAMED/python]
+  theta_fsa_rad: 1.0471975511965976
+  minimum_arc_length: 3.4
+  validation_threshold: 0.77
+  minimum_detector_score: 0.70
+  annulus_inner_scale: 1.05
+  annulus_outer_scale: 1.45
+  interior_scale: 0.88
+  minimum_red_annulus_fraction: 0.45
+  maximum_neutral_saturation: 100
+  minimum_neutral_value: 70
+  minimum_neutral_interior_fraction: 0.25
+  contour_samples: 360
+  selection_weights:
+    detector: 1.0
+    red_annulus: 3.0
+    neutral_interior: 1.0

@@ -1,0 +1,17 @@
+colors_bgr:
+  ellipse: [0, 220, 255]
+  candidate: [0, 140, 255]
+  selected_center: [0, 255, 0]
+  projected_3d_center: [255, 255, 0]
+draw:
+  ellipse_thickness_px: 2
+  center_radius_px: 5
+  projected_point_radius_px: 1
+  projected_point_opacity: 0.82
+  maximum_projected_points: 30000
+  intensity_range: [0.0, 255.0]
+  label_font_scale: 0.52
+  label_thickness_px: 1
+  label_padding_px: 9
+  label_line_gap_px: 7
+  label_background_opacity: 0.72

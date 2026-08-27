@@ -1,0 +1,7 @@
+schema_version: 1
+experiment: quasi_ransac_evaluation
+datasets: [paper]
+methods:
+  2d: null
+  3d: null
+  ambiguity: Quasi-RANSAC

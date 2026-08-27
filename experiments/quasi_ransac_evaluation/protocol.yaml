@@ -1,0 +1,58 @@
+schema_version: 1
+seed: 2025
+
+camera:
+  fx_px: 600.0
+  fy_px: 600.0
+  cx_px: 640.0
+  cy_px: 480.0
+
+volume:
+  width_m: 2.4
+  height_m: 1.6
+  minimum_depth_m: 2.0
+  maximum_depth_m: 5.0
+
+candidates:
+  correct_noise_sigma_px: 0.35
+  false_minimum_px: 25.0
+  false_maximum_px: 100.0
+  outlier_coordinate_displacement_px: 150.0
+
+success_criteria:
+  maximum_rotation_error_deg: 1.0
+  maximum_translation_error_m: 0.05
+
+table:
+  method: Quasi-RANSAC
+  confidence: 0.99
+  tex_filename: quasi_ransac_table.tex
+
+method_parameters:
+  Quasi-RANSAC:
+    inlier_threshold_px: 8.0
+    max_iterations: 2000
+    adaptive: true
+    scoring: consensus
+
+paper_reference:
+  rows:
+    - {point_count: 8, outlier_ratio: 0.0, observed_success_rate: 0.979, mean_iterations: 71.2, mean_elapsed_ms: 14.95}
+    - {point_count: 8, outlier_ratio: 0.1, observed_success_rate: 0.948, mean_iterations: 123.8, mean_elapsed_ms: 25.22}
+    - {point_count: 8, outlier_ratio: 0.2, observed_success_rate: 0.892, mean_iterations: 221.8, mean_elapsed_ms: 46.89}
+    - {point_count: 8, outlier_ratio: 0.3, observed_success_rate: 0.878, mean_iterations: 220.8, mean_elapsed_ms: 46.78}
+    - {point_count: 12, outlier_ratio: 0.0, observed_success_rate: 0.987, mean_iterations: 71.1, mean_elapsed_ms: 14.84}
+    - {point_count: 12, outlier_ratio: 0.1, observed_success_rate: 0.981, mean_iterations: 103.0, mean_elapsed_ms: 21.06}
+    - {point_count: 12, outlier_ratio: 0.2, observed_success_rate: 0.979, mean_iterations: 148.2, mean_elapsed_ms: 30.83}
+    - {point_count: 12, outlier_ratio: 0.3, observed_success_rate: 0.918, mean_iterations: 358.3, mean_elapsed_ms: 72.54}
+    - {point_count: 20, outlier_ratio: 0.0, observed_success_rate: 0.995, mean_iterations: 71.6, mean_elapsed_ms: 14.74}
+    - {point_count: 20, outlier_ratio: 0.1, observed_success_rate: 0.989, mean_iterations: 110.0, mean_elapsed_ms: 22.24}
+    - {point_count: 20, outlier_ratio: 0.2, observed_success_rate: 0.986, mean_iterations: 176.3, mean_elapsed_ms: 35.70}
+    - {point_count: 20, outlier_ratio: 0.3, observed_success_rate: 0.974, mean_iterations: 301.3, mean_elapsed_ms: 60.06}
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/quasi_ransac_evaluation
+  paper_table: Table II
+  note: The paper specifies the complete synthetic distributions but does not release trial data. Samples are regenerated deterministically; timing remains hardware dependent.

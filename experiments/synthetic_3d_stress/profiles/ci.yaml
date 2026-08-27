@@ -1,0 +1,7 @@
+schema_version: 1
+name: ci
+trials_per_cell: 2
+point_counts: [5, 16]
+arc_degrees: [45, 180]
+distributions: [full_circle_uniform, single_arc, dual_opposite_arcs, hdl64_type_bands]
+compare_to_paper_reference: false

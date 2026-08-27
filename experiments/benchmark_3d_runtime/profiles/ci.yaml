@@ -1,0 +1,6 @@
+schema_version: 1
+name: ci
+timed_repetitions: 9
+warmup_repetitions_per_process: 1
+process_repetitions: 1
+compare_to_paper_reference: false

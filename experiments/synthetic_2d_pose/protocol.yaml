@@ -1,0 +1,85 @@
+schema_version: 1
+seed: 2025
+
+camera:
+  fx_px: 600.0
+  fy_px: 600.0
+  cx_px: 640.0
+  cy_px: 480.0
+  image_width_px: 1280
+  image_height_px: 960
+
+geometry:
+  primary_radius: 2.0
+  validation_radius: 3.0
+  minimum_center_separation: 0.1
+
+sampling:
+  contour_points: 200
+  image_noise_sigma_px: 1.0
+
+pnp:
+  iterations: 100
+  reprojection_threshold_px: 5.0
+  confidence: 0.99
+
+candidate_source: Refined Center
+
+method_parameters:
+  2d:
+    Refined Center:
+      search_mode: paper_integer_grid
+      search_ratio: 0.5
+      directions: 4
+      integer_lattice_step_px: 0.1
+      integer_nms_radius_px: 10.0
+  ambiguity:
+    Homography Validation:
+      nominal_radius_ratio: 0.6666666666666666
+      clamp_degenerate_homography: true
+    Quasi-RANSAC:
+      confidence: 0.99
+      valid_correspondence_ratio: 1.0
+      inlier_threshold_px: 8.0
+      max_iterations: 1000
+      seed: 2025
+      adaptive: false
+      scoring: mean_error
+
+paper_outputs:
+  figure: error_bar_comparison.png
+  method_order: [Ellipse Center, Mass Center, Refined Center, Quasi-RANSAC]
+  paper_labels:
+    Ellipse Center: Ellipse Center
+    Mass Center: Mass Center
+    Refined Center: Refined Center
+    Quasi-RANSAC: RANSAC Center
+  dpi: 600
+
+paper_reference:
+  archived_successful_trials: 99
+  archived_unique_trials: 50
+  mean_errors:
+    Ellipse Center:
+      reprojection_error_px: 1.50840556
+      rotation_error_rad: 0.03494833
+      translation_error: 0.49557584
+    Mass Center:
+      reprojection_error_px: 1.39288472
+      rotation_error_rad: 0.03256714
+      translation_error: 0.48604911
+    Refined Center:
+      reprojection_error_px: 0.39471978
+      rotation_error_rad: 0.00101047
+      translation_error: 0.00515452
+    Quasi-RANSAC:
+      reprojection_error_px: 0.42110254
+      rotation_error_rad: 0.00530390
+      translation_error: 0.05116959
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/synthetic_2d_pose
+  paper_figure: Figure 9
+  note: The protocol is recovered from monte_carlo_2d_refinement.py, main_ransac_exp.py, and the 99 archived rows, which contain 50 unique generated trials. The unpublished intermediate p3ds/p2ds/Rs/ts NPZ files are regenerated deterministically and each unique seed is evaluated once.

@@ -1,0 +1,22 @@
+name: circular-center-calibration
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip>=23
+  - numpy>=1.24
+  - scipy>=1.10
+  - matplotlib>=3.7
+  - opencv>=4.8,<6
+  - cython>=3,<4
+  - pyyaml>=6
+  - pytest>=7,<9
+  - ruff>=0.4
+  - cmake>=3.20
+  - ninja
+  - eigen>=3.3,<4
+  - pcl>=1.12,<2
+  - cxx-compiler
+  - pip:
+      - -e .

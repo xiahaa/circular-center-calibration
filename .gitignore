@@ -31,3 +31,9 @@ results/
 .vscode/
 .DS_Store
 Thumbs.db
+
+data/*
+paper/
+project-page/
+reference/
+tmp/

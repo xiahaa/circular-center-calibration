@@ -1,0 +1,105 @@
+schema_version: 1
+seed: 2025
+
+circle:
+  radius_m: 0.12
+  noise_sigma_over_radius: 0.005
+  center_min_m: -2.0
+  center_max_m: 2.0
+  band_jitter_degrees: 0.5
+
+distributions:
+  - {name: full_circle_uniform, label: "Full-circle uniform"}
+  - {name: single_arc, label: "Single arc"}
+  - {name: dual_opposite_arcs, label: "Dual opposite arcs"}
+  - {name: hdl64_type_bands, label: "HDL-64-type bands"}
+
+success_threshold_m: 0.01
+
+method_parameters:
+  CGA: {}
+  PCL SACMODEL:
+    # 2.5 sigma: retain noisy inliers without making the 1-cm evaluation
+    # threshold part of the estimator itself.
+    residual_threshold_m: 0.0015
+    max_iterations: 1000
+    confidence: 0.99
+    minimum_radius_m: 0.06
+    maximum_radius_m: 0.18
+
+paper_outputs:
+  pdf: stress_heatmap_nominal_noise.pdf
+  png: stress_heatmap_nominal_noise.png
+
+# Counts were decoded from the embedded heatmap in the published PDF. A one-count
+# quantization uncertainty is possible because the trial-level data were not released.
+# Matrix rows follow point_counts=[5,8,16,32,64,128], columns follow
+# arc_degrees=[45,60,90,120,180,270,360].
+paper_reference:
+  trials_per_cell: 300
+  success_counts:
+    CGA:
+      full_circle_uniform:
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+      single_arc:
+        - [57, 166, 242, 274, 290, 299, 300]
+        - [166, 209, 294, 300, 300, 300, 300]
+        - [215, 281, 300, 300, 300, 300, 300]
+        - [262, 300, 300, 300, 300, 300, 300]
+        - [297, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+      dual_opposite_arcs:
+        - [291, 296, 297, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+      hdl64_type_bands:
+        - [1, 3, 5, 19, 123, 39, 1]
+        - [1, 3, 12, 44, 176, 98, 1]
+        - [268, 300, 300, 300, 300, 300, 300]
+        - [297, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+    PCL SACMODEL:
+      full_circle_uniform:
+        - [296, 297, 297, 299, 297, 296, 296]
+        - [298, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+        - [300, 300, 300, 300, 300, 300, 300]
+      single_arc:
+        - [32, 99, 207, 249, 281, 295, 296]
+        - [44, 104, 229, 277, 296, 300, 300]
+        - [33, 123, 246, 290, 300, 300, 300]
+        - [48, 118, 262, 298, 300, 300, 300]
+        - [60, 114, 261, 299, 300, 300, 300]
+        - [38, 168, 262, 300, 300, 300, 300]
+      dual_opposite_arcs:
+        - [261, 268, 291, 291, 295, 295, 296]
+        - [283, 295, 298, 300, 300, 300, 300]
+        - [288, 299, 300, 300, 300, 300, 300]
+        - [296, 300, 300, 300, 300, 300, 300]
+        - [296, 300, 300, 300, 300, 300, 300]
+        - [296, 300, 300, 300, 300, 300, 300]
+      hdl64_type_bands:
+        - [1, 1, 3, 18, 79, 28, 1]
+        - [1, 1, 5, 28, 98, 24, 1]
+        - [108, 229, 283, 295, 286, 290, 47]
+        - [94, 215, 294, 300, 300, 300, 283]
+        - [70, 189, 284, 300, 300, 300, 300]
+        - [53, 189, 281, 300, 300, 300, 300]
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/synthetic_3d_stress
+  paper_figure: Figure 6
+  note: The paper specifies the grid and distributions but does not release its generator or trial records. This implementation follows the text deterministically; PDF heatmap colors are retained only as approximate comparison values.

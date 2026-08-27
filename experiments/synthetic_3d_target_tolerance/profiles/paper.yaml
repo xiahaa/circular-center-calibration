@@ -1,0 +1,5 @@
+schema_version: 1
+name: paper
+trials_per_setting: 300
+magnitudes: [0.0, 0.0025, 0.005, 0.01, 0.02, 0.05]
+compare_to_paper_reference: true

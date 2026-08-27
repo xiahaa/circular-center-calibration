@@ -1,0 +1,4 @@
+schema_version: 1
+name: paper
+trials: 1000
+compare_to_paper_reference: true

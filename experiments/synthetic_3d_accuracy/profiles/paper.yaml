@@ -1,0 +1,6 @@
+schema_version: 1
+name: paper
+monte_carlo_trials: 1000
+outlier_trials: 100
+outlier_ratios: [0.1, 0.2, 0.3, 0.4, 0.5]
+compare_to_paper_reference: true

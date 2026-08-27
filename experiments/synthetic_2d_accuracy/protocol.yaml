@@ -1,0 +1,76 @@
+schema_version: 1
+seed: 2025
+
+camera:
+  fx_px: 600.0
+  fy_px: 600.0
+  cx_px: 640.0
+  cy_px: 480.0
+  image_width_px: 1280
+  image_height_px: 960
+
+geometry:
+  radius_m: 2.0
+  coplanar_radius_m: 2.0
+  coplanar_offset_m: [4.0, 4.0, 0.0]
+
+sampling:
+  contour_points: 200
+  rotation_vector_sigma_rad: 0.6
+  translation_mean_m: [1.0, 0.0, 8.0]
+  translation_sigma_m: 1.0
+  image_noise_sigma_px: 1.0
+
+# These overrides recover the released Figure 8 code path.  They are local to
+# this experiment; the central Refined Center defaults remain the modern,
+# sub-pixel coarse-to-fine implementation.
+method_parameters:
+  2d:
+    Refined Center:
+      search_mode: paper_integer_grid
+      search_ratio: 0.5
+      directions: 4
+      integer_lattice_step_px: 0.1
+      integer_nms_radius_px: 10.0
+  ambiguity:
+    Homography Validation:
+      nominal_radius_ratio: 1.0
+      clamp_degenerate_homography: true
+
+paper_outputs:
+  figure: validation_error_distribution.png
+  method_order: [Refined Center, Ellipse Center, Mass Center]
+  histogram_bins: 30
+  dpi: 600
+
+paper_reference:
+  # Recovered from the 1000 trial-level CSV rows used to render paper Figure 8.
+  error_magnitude_px:
+    Refined Center:
+      mean: 1.2671590037
+      std: 5.9415689740
+      median: 0.4427407921
+      p95: 1.4795309550
+      max: 74.2807611659
+    Ellipse Center:
+      mean: 16.1364220985
+      std: 7.4259500502
+      median: 15.3862169893
+      p95: 29.9091320268
+      max: 52.0264719867
+    Mass Center:
+      mean: 16.1163918792
+      std: 7.3429788722
+      median: 15.2436401293
+      p95: 29.3412888898
+      max: 52.0435069275
+
+reproducibility:
+  self_contained: true
+  external_reference_required: false
+  implementation: experiments/synthetic_2d_accuracy
+  paper_figure: Figure 8
+  exact_geometry_noise_and_ellipse_fit: true
+  exact_baseline_statistics: true
+  refined_tail_exact: false
+  note: The archived trial CSV and the accompanying late CCFinder source differ on a small set of degenerate candidate searches. This implementation follows the released source protocol and compares its aggregate output with the archived Figure 8 statistics without importing CCFinder at runtime.

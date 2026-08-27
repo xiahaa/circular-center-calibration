@@ -1,0 +1,3 @@
+[submodule "thirdparty/AAMED"]
+	path = thirdparty/AAMED
+	url = https://github.com/Li-Zhaoxi/AAMED.git
