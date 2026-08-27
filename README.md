@@ -7,10 +7,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-D22128?style=flat-square&amp;logo=apache&amp;logoColor=white" alt="Apache-2.0 License"></a>
 </p>
 
-<h2>
-  Accurate Measurement of 3D and 2D Circular Centers With<br>
-  Application to LiDAR-Camera Extrinsic Calibration
-</h2>
+<h1>
+  Accurate Measurement of 3D and 2D Circular Centers<br>
+  With Application to LiDAR-Camera Extrinsic Calibration
+</h1>
 
 <p>
   <a href="https://github.com/Eku127">Jiajun Jiang</a>
