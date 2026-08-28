@@ -3,7 +3,7 @@
 <p>
   <a href="https://eku127.github.io/circular-center-calibration/"><img src="https://img.shields.io/badge/Project-Page-2563EB?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Project Page"></a>
   <a href="https://arxiv.org/abs/2511.06611"><img src="https://img.shields.io/badge/arXiv-2511.06611-B31B1B?style=flat-square&amp;logo=arxiv&amp;logoColor=white" alt="arXiv"></a>
-  <a href="https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link"><img src="https://img.shields.io/badge/Dataset-Google_Drive-0F9D58?style=flat-square&amp;logo=googledrive&amp;logoColor=white" alt="Dataset"></a>
+  <a href="https://drive.google.com/drive/folders/1HV0tRHV02f392ATqT-y375Ww-NH_-186?usp=drive_link"><img src="https://img.shields.io/badge/Dataset-Google_Drive-0F9D58?style=flat-square&amp;logo=google-drive&amp;logoColor=white" alt="Dataset"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-D22128?style=flat-square&amp;logo=apache&amp;logoColor=white" alt="Apache-2.0 License"></a>
 </p>
 
@@ -29,6 +29,10 @@
 ![Overview of the 3D and 2D circular-center estimation and LiDAR-camera calibration pipeline](docs/assets/teaser.png)
 
 <p align="center"><em>Accurate 3D and 2D circular-center estimation for camera&ndash;LiDAR extrinsic calibration.</em></p>
+
+![CGA qualitative demo](docs/assets/circle_cga.gif)
+
+<p align="center"><em>Qualitative demonstration of circular-center estimation with CGA.</em></p>
 
 ## Installation
 
