@@ -17,7 +17,7 @@
   &nbsp;&middot;&nbsp;
   <a href="mailto:hux062303@gmail.com">Xiao Hu</a><sup>*</sup>
   &nbsp;&middot;&nbsp;
-  <a href="mailto:wancheng.liu@horizon-continental.com">Wancheng Liu</a>
+  <a href="mailto:luciferlewis@126.com">Wancheng Liu</a>
   &nbsp;&middot;&nbsp;
   <a href="mailto:weijiang@bjtu.edu.cn">Wei Jiang</a>
 </p>
